@@ -22,7 +22,7 @@ float4   MaterialDiffuse   : DIFFUSE  < string Object = "Geometry"; >;
 float3   MaterialSpecular  : SPECULAR < string Object = "Geometry"; >;
 float    SpecularPower     : SPECULARPOWER < string Object = "Geometry"; >;
 // ライト色
-float3   LightColor        : SPECULAR < string Object = "Light"; >;
+float3   LightColor        : AMBIENT < string Object = "Light"; >;
 static float3 AmbientColor = LightColor * AmbientCoeff;
 
 // テクスチャ材質モーフ値
