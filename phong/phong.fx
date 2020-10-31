@@ -2,6 +2,9 @@
 // phong: フォンの反射モデルを使ったシェーディングを行う
 //
 
+// LightColor に対する AmbientColor の大きさ
+static const float AmbientCoeff = 0.75;
+
 //----------------------------------------------------------------------------------------------
 
 // 座法変換行列
@@ -20,7 +23,7 @@ float3   MaterialSpecular  : SPECULAR < string Object = "Geometry"; >;
 float    SpecularPower     : SPECULARPOWER < string Object = "Geometry"; >;
 // ライト色
 float3   LightColor        : SPECULAR < string Object = "Light"; >;
-static float3 AmbientColor = LightColor * 0.75;
+static float3 AmbientColor = LightColor * AmbientCoeff;
 
 // テクスチャ材質モーフ値
 float4   TextureAddValue   : ADDINGTEXTURE;
@@ -79,6 +82,36 @@ void BasicVS(
     oTexCoord = texCoord;
 }
 
+float3 CalculateLight(
+	float4 lightClipPos,
+	uniform bool selfShadow
+) {
+	if (!selfShadow) {
+		return LightColor;
+	}
+
+	// シャドウマップの座標に変換
+	lightClipPos /= lightClipPos.w;
+	float2 shadowMapCoord = float2(
+		(1 + lightClipPos.x) * 0.5,
+		(1 - lightClipPos.y) * 0.5);
+
+	if (any(saturate(shadowMapCoord) != shadowMapCoord)) {
+		return LightColor;
+	}
+
+	float lightDepth = max(lightClipPos.z - tex2D(ShadowBufferSampler, shadowMapCoord).r, 0);
+	float comp;
+	if (parthf) {
+		// セルフシャドウ mode2
+		comp = 1 - saturate(lightDepth * SKII2 * shadowMapCoord.y - 0.3);
+	} else {
+		// セルフシャドウ mode1
+		comp = 1 - saturate(lightDepth * SKII1 - 0.3);
+	}
+	return lerp(0, LightColor, comp);
+}
+
 float3 Phong(
 	float3 baseColor,
 	float3 normal,
@@ -104,43 +137,23 @@ float4 BasicPS(
 	uniform bool useTexture,
 	uniform bool selfShadow
 ) : COLOR0 {
-	normal = normalize(normal);
-	eye = normalize(eye);
-
-	float4 texColor = float4(1, 1, 1, 1);
+	float4 baseColor = float4(MaterialAmbient, MaterialDiffuse.a);
     if (useTexture) {
-        // テクスチャ適用
-        texColor = tex2D(ObjectTextureSampler, tex);
-        // テクスチャ材質モーフ数
-	    texColor.rgb = lerp(1, texColor.rgb * TextureMulValue.rgb + TextureAddValue.rgb, TextureMulValue.a + TextureAddValue.a);
+        float4 texColor = tex2D(ObjectTextureSampler, tex);
+        // テクスチャ材質モーフ
+	    texColor.rgb = lerp(
+			1,
+			texColor.rgb * TextureMulValue.rgb + TextureAddValue.rgb,
+			TextureMulValue.a + TextureAddValue.a);
+		baseColor *= texColor;
     }
-	float3 baseColor = MaterialAmbient.rgb * texColor.rgb;
-
-	float3 lightColor = LightColor;
-	if (selfShadow) {
-		// シャドウマップの座標に変換
-		lightClipPos /= lightClipPos.w;
-		float2 shadowMapCoord = float2(
-			(1 + lightClipPos.x) * 0.5,
-			(1 - lightClipPos.y) * 0.5);
-
-		if (any(saturate(shadowMapCoord) == shadowMapCoord)) {
-			float lightDepth = max(lightClipPos.z - tex2D(ShadowBufferSampler, shadowMapCoord).r, 0);
-			float comp;
-			if (parthf) {
-				// セルフシャドウ mode2
-				comp = 1 - saturate(lightDepth * SKII2 * shadowMapCoord.y - 0.3);
-			} else {
-				// セルフシャドウ mode1
-				comp = 1 - saturate(lightDepth * SKII1 - 0.3);
-			}
-			lightColor = lerp(0, LightColor, comp);
-		}
+	if (transp) {
+		baseColor.a = 0.5;
 	}
-
+	float3 lightColor = CalculateLight(lightClipPos, selfShadow);
 	return float4(
-		Phong(baseColor.rgb, normal, eye, lightColor),
-		transp ? 0.5 : MaterialDiffuse.a * texColor.a);
+		Phong(baseColor.rgb, normalize(normal), normalize(eye), lightColor),
+		baseColor.a);
 }
 
 //---------------------------------------------------------------------------------------------
