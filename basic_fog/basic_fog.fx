@@ -80,7 +80,7 @@ sampler DepthSamp = sampler_state {
 float2 ViewportSize : VIEWPORTPIXELSIZE;
 static float2 ViewportOffset = float2(0.5, 0.5) / ViewportSize;
 
-static float  FogCoeff = 0.01 * Scale;
+static float  FogCoeff = 0.001 * Scale;
 static float3 FogColor = HSVToRGB(saturate(float3(XYZ.xy, 1.0 - XYZ.z)));
 
 //-----------------------------------------------------------------------------
