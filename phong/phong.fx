@@ -30,7 +30,6 @@ float4   TextureAddValue   : ADDINGTEXTURE;
 float4   TextureMulValue   : MULTIPLYINGTEXTURE;
 
 bool     parthf;   // パースペクティブフラグ
-bool     transp;   // 半透明フラグ
 #define SKII1    1500
 #define SKII2    8000
 
@@ -147,9 +146,6 @@ float4 BasicPS(
 			TextureMulValue.a + TextureAddValue.a);
 		baseColor *= texColor;
     }
-	if (transp) {
-		baseColor.a = 0.5;
-	}
 	float3 lightColor = CalculateLight(lightClipPos, selfShadow);
 	return float4(
 		Phong(baseColor.rgb, normalize(normal), normalize(eye), lightColor),
