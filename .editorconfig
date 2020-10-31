@@ -1,0 +1,9 @@
+root = true
+
+[*.{fx,fxsub}]
+charset = Shift_JIS
+end_of_line = crlf
+indent_style = tab
+tab_width = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
