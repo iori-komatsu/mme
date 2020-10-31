@@ -1,0 +1,66 @@
+//
+// depth.fxsub: ê[ìxÇèoóÕÇ∑ÇÈ
+//
+
+//-----------------------------------------------------------------------------
+
+float4x4 WorldViewProjMatrix : WORLDVIEWPROJECTION;
+
+bool use_texture;
+texture Texture: MATERIALTEXTURE;
+sampler TextureSampler = sampler_state {
+    texture = <Texture>;
+    MINFILTER = LINEAR;
+    MAGFILTER = LINEAR;
+};
+
+sampler MMDSamp0 : register(s0);
+sampler MMDSamp1 : register(s1);
+sampler MMDSamp2 : register(s2);
+
+//-----------------------------------------------------------------------------
+
+void DepthVS(
+	in float4 pos : POSITION,
+	in float2 tex : TEXCOORD0,
+	out float4 oPos : POSITION,
+	out float oDepth : TEXCOORD0,
+	out float2 oTex : TEXCOORD1
+) {
+	oPos = mul(pos, WorldViewProjMatrix);
+	oDepth = oPos.w;
+	if (use_texture) {
+		oTex = tex;
+	}
+}
+
+float4 DepthPS(
+	in float depth : TEXCOORD0,
+	in float2 texCoord : TEXCOORD1
+) : COLOR {
+	if (use_texture) {
+		float alpha = tex2D(TextureSampler, texCoord).a;
+		clip(alpha - 0.01);
+	}
+	return float4(depth, 0, 0, 1);
+}
+
+//-----------------------------------------------------------------------------
+
+#define DEFINE_TECHNIQUE(name, mmdpass) \
+	technique name < string MMDPass = mmdpass; > { \
+		pass DrawObject { \
+			AlphaBlendEnable = FALSE; \
+			VertexShader = compile vs_3_0 DepthVS(); \
+			PixelShader  = compile ps_3_0 DepthPS(); \
+		} \
+	}
+
+#define EMPTY_TECHNIQUE(name, mmdpass) \
+	technique name < string MMDPass = mmdpass; > {}
+
+DEFINE_TECHNIQUE(MainTec, "object")
+DEFINE_TECHNIQUE(MainTecBS, "object_ss")
+DEFINE_TECHNIQUE(EdgeTec, "edge")
+EMPTY_TECHNIQUE(ShadowTec, "shadow")
+EMPTY_TECHNIQUE(ZplotTec, "zplot")
