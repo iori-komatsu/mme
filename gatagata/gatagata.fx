@@ -2,7 +2,7 @@
 // gatagata: ƒ‚ƒfƒ‹‚ðƒKƒ^ƒKƒ^‚É‚µ‚Ü‚·
 //
 
-static const float MaxPerturbWidth = 1.0;
+static const float MaxPerturbWidth = 10.0;
 static const float Scale = 0.1;
 
 // LightColor ‚É‘Î‚·‚é AmbientColor ‚Ì‘å‚«‚³
@@ -136,14 +136,16 @@ float3 Phong(
 	float3 eye,
 	float3 lightColor
 ) {
-	// Phong specular
+	// Blinn-Phong specular
+	const float Z_P = (SpecularPower + 2.0) * (SpecularPower + 4.0)
+	                / (8.0 * PI * (exp2(-0.5 * SpecularPower) + SpecularPower));
 	float3 halfVector = normalize(eye + -LightDirection);
-	float3 specular = pow(max(0, dot(halfVector, normal)), SpecularPower) * MaterialSpecular;
+	float3 specular = Z_P * pow(max(0, dot(halfVector, normal)), SpecularPower) * MaterialSpecular;
 
 	// Half Lambert diffuse
-	const float Z = 3.0 / (4.0 * PI);
+	const float Z_L = 3.0 / (4.0 * PI);
 	float diffuseLight = dot(normal, -LightDirection) * 0.5 + 0.5;
-	float3 diffuse = Z * diffuseLight * diffuseLight * baseColor;
+	float3 diffuse = Z_L * diffuseLight * diffuseLight * baseColor;
 
 	return (specular + diffuse) * lightColor + AmbientColor * baseColor;
 }
