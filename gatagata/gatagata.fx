@@ -144,7 +144,7 @@ float3 Phong(
 ) {
 	// Blinn-Phong specular
 	const float Z_P = (SpecularPower + 2.0) * (SpecularPower + 4.0)
-	                / (8.0 * PI * (exp2(-0.5 * SpecularPower) + SpecularPower));
+					/ (8.0 * PI * (exp2(-0.5 * SpecularPower) + SpecularPower));
 	float3 halfVector = normalize(eye + -LightDirection);
 	float3 specular = Z_P * pow(max(0, dot(halfVector, normal)), SpecularPower) * MaterialSpecular;
 
@@ -194,39 +194,39 @@ float Hash31(float3 p) {
 }
 
 float ValueNoise(float3 src) {
-    float3 i = floor(src);
-    float3 f = frac(src);
+	float3 i = floor(src);
+	float3 f = frac(src);
 
-    float v1 = Hash31(i + float3(0.0, 0.0, 0.0));
-    float v2 = Hash31(i + float3(1.0, 0.0, 0.0));
-    float v3 = Hash31(i + float3(0.0, 1.0, 0.0));
-    float v4 = Hash31(i + float3(1.0, 1.0, 0.0));
-    float v5 = Hash31(i + float3(0.0, 0.0, 1.0));
-    float v6 = Hash31(i + float3(1.0, 0.0, 1.0));
-    float v7 = Hash31(i + float3(0.0, 1.0, 1.0));
-    float v8 = Hash31(i + float3(1.0, 1.0, 1.0));
+	float v1 = Hash31(i + float3(0.0, 0.0, 0.0));
+	float v2 = Hash31(i + float3(1.0, 0.0, 0.0));
+	float v3 = Hash31(i + float3(0.0, 1.0, 0.0));
+	float v4 = Hash31(i + float3(1.0, 1.0, 0.0));
+	float v5 = Hash31(i + float3(0.0, 0.0, 1.0));
+	float v6 = Hash31(i + float3(1.0, 0.0, 1.0));
+	float v7 = Hash31(i + float3(0.0, 1.0, 1.0));
+	float v8 = Hash31(i + float3(1.0, 1.0, 1.0));
 
-    float3 a = f * f * f * (10.0 + f * (-15.0 + f * 6.0));
+	float3 a = f * f * f * (10.0 + f * (-15.0 + f * 6.0));
 
-    return 2.0 * lerp(
-        lerp(lerp(v1, v2, a.x), lerp(v3, v4, a.x), a.y),
-        lerp(lerp(v5, v6, a.x), lerp(v7, v8, a.x), a.y),
-        a.z
-    ) - 1.0;
+	return 2.0 * lerp(
+		lerp(lerp(v1, v2, a.x), lerp(v3, v4, a.x), a.y),
+		lerp(lerp(v5, v6, a.x), lerp(v7, v8, a.x), a.y),
+		a.z
+	) - 1.0;
 }
 
 float FBM(float3 src) {
-    const int NUM_OCTAVES = 4;
-    float f = 0.25;
-    float a = 1.0;
-    float ret = 0.0;
-    for (int i = 0; i < NUM_OCTAVES; ++i) {
-        ret += a * ValueNoise(f * src);
-        f *= 2.0;
-        a *= 0.5;
-    }
-    const float s = (1.0 - pow(0.5, float(NUM_OCTAVES))) * 2.0;
-    return ret / s;
+	const int NUM_OCTAVES = 4;
+	float f = 0.25;
+	float a = 1.0;
+	float ret = 0.0;
+	for (int i = 0; i < NUM_OCTAVES; ++i) {
+		ret += a * ValueNoise(f * src);
+		f *= 2.0;
+		a *= 0.5;
+	}
+	const float s = (1.0 - pow(0.5, float(NUM_OCTAVES))) * 2.0;
+	return ret / s;
 }
 
 float3 RandomUnitVector(float3 p) {
@@ -282,28 +282,28 @@ void ZPlotVS(
 ) {
 	pos = PerturbPosition(pos);
 
-    // ライトの目線によるワールドビュー射影変換をする
-    oPos = mul(pos, LightWorldViewProjMatrix);
+	// ライトの目線によるワールドビュー射影変換をする
+	oPos = mul(pos, LightWorldViewProjMatrix);
 
-    // テクスチャ座標を頂点に合わせる
-    oShadowMapTex = oPos;
+	// テクスチャ座標を頂点に合わせる
+	oShadowMapTex = oPos;
 }
 
 // ピクセルシェーダ
 float4 ZPlotPS(
 	in float4 shadowMapTex : TEXCOORD0
 ) : COLOR {
-    // R色成分にZ値を記録する
-    return float4(shadowMapTex.z / shadowMapTex.w, 0, 0, 1);
+	// R色成分にZ値を記録する
+	return float4(shadowMapTex.z / shadowMapTex.w, 0, 0, 1);
 }
 
 // Z値プロット用テクニック
 technique ZPlotTec < string MMDPass = "zplot"; > {
-    pass PlotZ {
-        AlphaBlendEnable = FALSE;
-        VertexShader = compile vs_2_0 ZPlotVS();
-        PixelShader  = compile ps_2_0 ZPlotPS();
-    }
+	pass PlotZ {
+		AlphaBlendEnable = FALSE;
+		VertexShader = compile vs_2_0 ZPlotVS();
+		PixelShader  = compile ps_2_0 ZPlotPS();
+	}
 }
 
 //---------------------------------------------------------------------------------------------
@@ -313,28 +313,28 @@ float4 PositionOnlyVS(float4 pos : POSITION) : POSITION
 {
 	pos = PerturbPosition(pos);
 
-    // カメラ視点のワールドビュー射影変換
-    return mul(pos, WorldViewProjMatrix);
+	// カメラ視点のワールドビュー射影変換
+	return mul(pos, WorldViewProjMatrix);
 }
 
 // ピクセルシェーダ
 float4 SolidColorPS(uniform float4 color) : COLOR
 {
-    return color;
+	return color;
 }
 
 // 影描画用テクニック
 technique ShadowTec < string MMDPass = "shadow"; > {
-    pass DrawShadow {
-        VertexShader = compile vs_2_0 PositionOnlyVS();
-        PixelShader  = compile ps_2_0 SolidColorPS(GroundShadowColor);
-    }
+	pass DrawShadow {
+		VertexShader = compile vs_2_0 PositionOnlyVS();
+		PixelShader  = compile ps_2_0 SolidColorPS(GroundShadowColor);
+	}
 }
 
 // 輪郭描画用テクニック
 technique EdgeTec < string MMDPass = "edge"; > {
-    pass DrawEdge {
-        VertexShader = compile vs_2_0 PositionOnlyVS();
-        PixelShader  = compile ps_2_0 SolidColorPS(EdgeColor);
-    }
+	pass DrawEdge {
+		VertexShader = compile vs_2_0 PositionOnlyVS();
+		PixelShader  = compile ps_2_0 SolidColorPS(EdgeColor);
+	}
 }

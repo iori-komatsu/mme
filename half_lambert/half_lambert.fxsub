@@ -38,12 +38,12 @@ bool     transp;   // 半透明フラグ
 // オブジェクトのテクスチャ
 texture ObjectTexture: MATERIALTEXTURE;
 sampler ObjectTextureSampler = sampler_state {
-    texture = <ObjectTexture>;
-    MINFILTER = LINEAR;
-    MAGFILTER = LINEAR;
-    MIPFILTER = LINEAR;
-    ADDRESSU  = WRAP;
-    ADDRESSV  = WRAP;
+	texture = <ObjectTexture>;
+	MINFILTER = LINEAR;
+	MAGFILTER = LINEAR;
+	MIPFILTER = LINEAR;
+	ADDRESSU  = WRAP;
+	ADDRESSV  = WRAP;
 };
 
 static const float PI = 3.14159265;
@@ -66,21 +66,21 @@ void MainVS(
 	out float3 oNormal : TEXCOORD2,
 	out float3 oEye : TEXCOORD3
 ) {
-    // カメラ視点のワールドビュー射影変換
-    oPos = mul(pos, WorldViewProjMatrix);
+	// カメラ視点のワールドビュー射影変換
+	oPos = mul(pos, WorldViewProjMatrix);
 
-    // カメラとの相対位置
-    oEye = CameraPosition - mul(pos, WorldMatrix).rgb;
-    // 頂点法線
-    oNormal = normalize(mul(normal, (float3x3)WorldMatrix));
+	// カメラとの相対位置
+	oEye = CameraPosition - mul(pos, WorldMatrix).rgb;
+	// 頂点法線
+	oNormal = normalize(mul(normal, (float3x3)WorldMatrix));
 
 	if (selfShadow) {
 		// ライト視点によるワールドビュー射影変換
 		oLightClipPos = mul(pos, LightWorldViewProjMatrix);
 	}
 
-    // テクスチャ座標
-    oTexCoord = texCoord;
+	// テクスチャ座標
+	oTexCoord = texCoord;
 }
 
 float3 CalculateLight(
@@ -119,13 +119,13 @@ float3 Phong(
 	float3 eye,
 	float3 lightColor
 ) {
-    // Blinn-Phong specular
+	// Blinn-Phong specular
 	const float Z_P = (SpecularPower + 2.0) * (SpecularPower + 4.0)
-	                / (8.0 * PI * (exp2(-0.5 * SpecularPower) + SpecularPower));
-    float3 halfVector = normalize(eye + -LightDirection);
-    float3 specular = Z_P * pow(max(0, dot(halfVector, normal)), SpecularPower) * MaterialSpecular;
+					/ (8.0 * PI * (exp2(-0.5 * SpecularPower) + SpecularPower));
+	float3 halfVector = normalize(eye + -LightDirection);
+	float3 specular = Z_P * pow(max(0, dot(halfVector, normal)), SpecularPower) * MaterialSpecular;
 
-    // Half Lambert diffuse
+	// Half Lambert diffuse
 	const float Z_L = 3.0 / (4.0 * PI);
 	float diffuseLight = dot(normal, -LightDirection) * 0.5 + 0.5;
 	float3 diffuse = Z_L * diffuseLight * diffuseLight * baseColor;

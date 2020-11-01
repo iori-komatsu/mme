@@ -36,12 +36,12 @@ bool     parthf;   // パースペクティブフラグ
 // オブジェクトのテクスチャ
 texture ObjectTexture: MATERIALTEXTURE;
 sampler ObjectTextureSampler = sampler_state {
-    texture = <ObjectTexture>;
-    MINFILTER = LINEAR;
-    MAGFILTER = LINEAR;
-    MIPFILTER = LINEAR;
-    ADDRESSU  = WRAP;
-    ADDRESSV  = WRAP;
+	texture = <ObjectTexture>;
+	MINFILTER = LINEAR;
+	MAGFILTER = LINEAR;
+	MIPFILTER = LINEAR;
+	ADDRESSU  = WRAP;
+	ADDRESSV  = WRAP;
 };
 
 static const float PI = 3.14159265;
@@ -64,21 +64,21 @@ void BasicVS(
 	out float3 oNormal : TEXCOORD2,
 	out float3 oEye : TEXCOORD3
 ) {
-    // カメラ視点のワールドビュー射影変換
-    oPos = mul(pos, WorldViewProjMatrix);
+	// カメラ視点のワールドビュー射影変換
+	oPos = mul(pos, WorldViewProjMatrix);
 
-    // カメラとの相対位置
-    oEye = CameraPosition - mul(pos, WorldMatrix).rgb;
-    // 頂点法線
-    oNormal = normalize(mul(normal, (float3x3)WorldMatrix));
+	// カメラとの相対位置
+	oEye = CameraPosition - mul(pos, WorldMatrix).rgb;
+	// 頂点法線
+	oNormal = normalize(mul(normal, (float3x3)WorldMatrix));
 
 	if (selfShadow) {
 		// ライト視点によるワールドビュー射影変換
 		oLightClipPos = mul(pos, LightWorldViewProjMatrix);
 	}
 
-    // テクスチャ座標
-    oTexCoord = texCoord;
+	// テクスチャ座標
+	oTexCoord = texCoord;
 }
 
 float3 CalculateLight(
@@ -117,11 +117,11 @@ float3 Phong(
 	float3 eye,
 	float3 lightColor
 ) {
-    // Phong specular
-    float3 halfVector = normalize(eye + -LightDirection);
-    float3 specular = pow(max(0, dot(halfVector, normal)), SpecularPower) * MaterialSpecular;
+	// Phong specular
+	float3 halfVector = normalize(eye + -LightDirection);
+	float3 specular = pow(max(0, dot(halfVector, normal)), SpecularPower) * MaterialSpecular;
 
-    // Lambert diffuse
+	// Lambert diffuse
 	float3 diffuse = max(0, dot(normal, -LightDirection)) * baseColor / PI;
 
 	return (specular + diffuse) * lightColor + AmbientColor * baseColor;
@@ -137,15 +137,15 @@ float4 BasicPS(
 	uniform bool selfShadow
 ) : COLOR0 {
 	float4 baseColor = float4(MaterialAmbient, MaterialDiffuse.a);
-    if (useTexture) {
-        float4 texColor = tex2D(ObjectTextureSampler, tex);
-        // テクスチャ材質モーフ
-	    texColor.rgb = lerp(
+	if (useTexture) {
+		float4 texColor = tex2D(ObjectTextureSampler, tex);
+		// テクスチャ材質モーフ
+		texColor.rgb = lerp(
 			1,
 			texColor.rgb * TextureMulValue.rgb + TextureAddValue.rgb,
 			TextureMulValue.a + TextureAddValue.a);
 		baseColor *= texColor;
-    }
+	}
 	float3 lightColor = CalculateLight(lightClipPos, selfShadow);
 	return float4(
 		Phong(baseColor.rgb, normalize(normal), normalize(eye), lightColor),

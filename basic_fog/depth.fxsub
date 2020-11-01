@@ -9,9 +9,9 @@ float4x4 WorldViewProjMatrix : WORLDVIEWPROJECTION;
 bool use_texture;
 texture Texture: MATERIALTEXTURE;
 sampler TextureSampler = sampler_state {
-    texture = <Texture>;
-    MINFILTER = LINEAR;
-    MAGFILTER = LINEAR;
+	texture = <Texture>;
+	MINFILTER = LINEAR;
+	MAGFILTER = LINEAR;
 };
 
 sampler MMDSamp0 : register(s0);
