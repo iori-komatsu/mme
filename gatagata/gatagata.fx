@@ -24,6 +24,8 @@ float3   MaterialAmbient   : AMBIENT  < string Object = "Geometry"; >;
 float4   MaterialDiffuse   : DIFFUSE  < string Object = "Geometry"; >;
 float3   MaterialSpecular  : SPECULAR < string Object = "Geometry"; >;
 float    SpecularPower     : SPECULARPOWER < string Object = "Geometry"; >;
+float4   EdgeColor         : EDGECOLOR;
+float4   GroundShadowColor : GROUNDSHADOWCOLOR;
 // ライト色
 float3   LightAmbient        : AMBIENT < string Object = "Light"; >;
 static float3 LightColor = LightAmbient * 4;
@@ -66,6 +68,12 @@ float3 Hash33(float3 p3)
 	return frac((p3.xxy + p3.yxx) * p3.zyx);
 }
 
+float4 PerturbPosition(float4 pos) {
+	float3 perturb = (2 * Hash33(pos.xyz) - 1) * MaxPerturbWidth;
+	pos.xyz += perturb;
+	return pos;
+}
+
 // 頂点シェーダ
 void MainVS(
 	in float4 pos : POSITION,
@@ -79,9 +87,7 @@ void MainVS(
 	out float3 oNormal : TEXCOORD2,
 	out float3 oWorldPos : TEXCOORD3
 ) {
-	float3 perturb = (2 * Hash33(pos.xyz) - 1) * MaxPerturbWidth;
-
-	pos.xyz += perturb;
+	pos = PerturbPosition(pos);
 
 	// カメラ視点のワールドビュー射影変換
 	oPos = mul(pos, WorldViewProjMatrix);
@@ -267,3 +273,68 @@ MAIN_TEC(MainTec1, "object", true, false)
 MAIN_TEC(MainTecBS0, "object_ss", false, true)
 MAIN_TEC(MainTecBS1, "object_ss", true, true)
 
+//---------------------------------------------------------------------------------------------
+
+void ZPlotVS(
+	in float4 pos : POSITION,
+	out float4 oPos : POSITION,
+	out float4 oShadowMapTex : TEXCOORD0
+) {
+	pos = PerturbPosition(pos);
+
+    // ライトの目線によるワールドビュー射影変換をする
+    oPos = mul(pos, LightWorldViewProjMatrix);
+
+    // テクスチャ座標を頂点に合わせる
+    oShadowMapTex = oPos;
+}
+
+// ピクセルシェーダ
+float4 ZPlotPS(
+	in float4 shadowMapTex : TEXCOORD0
+) : COLOR {
+    // R色成分にZ値を記録する
+    return float4(shadowMapTex.z / shadowMapTex.w, 0, 0, 1);
+}
+
+// Z値プロット用テクニック
+technique ZPlotTec < string MMDPass = "zplot"; > {
+    pass PlotZ {
+        AlphaBlendEnable = FALSE;
+        VertexShader = compile vs_2_0 ZPlotVS();
+        PixelShader  = compile ps_2_0 ZPlotPS();
+    }
+}
+
+//---------------------------------------------------------------------------------------------
+
+// 頂点シェーダ
+float4 PositionOnlyVS(float4 pos : POSITION) : POSITION
+{
+	pos = PerturbPosition(pos);
+
+    // カメラ視点のワールドビュー射影変換
+    return mul(pos, WorldViewProjMatrix);
+}
+
+// ピクセルシェーダ
+float4 SolidColorPS(uniform float4 color) : COLOR
+{
+    return color;
+}
+
+// 影描画用テクニック
+technique ShadowTec < string MMDPass = "shadow"; > {
+    pass DrawShadow {
+        VertexShader = compile vs_2_0 PositionOnlyVS();
+        PixelShader  = compile ps_2_0 SolidColorPS(GroundShadowColor);
+    }
+}
+
+// 輪郭描画用テクニック
+technique EdgeTec < string MMDPass = "edge"; > {
+    pass DrawEdge {
+        VertexShader = compile vs_2_0 PositionOnlyVS();
+        PixelShader  = compile ps_2_0 SolidColorPS(EdgeColor);
+    }
+}
