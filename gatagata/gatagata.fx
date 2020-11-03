@@ -4,6 +4,8 @@
 
 static const float MaxPerturbWidth = 10.0;
 static const float Scale = 0.1;
+static const float ScaleYMin = 0.2;
+static const float ScaleYMax = 0.8;
 
 // LightColor に対する AmbientColor の大きさ
 static const float AmbientCoeff = 0.1;
@@ -59,18 +61,90 @@ sampler ShadowBufferSampler : register(s0);
 
 //---------------------------------------------------------------------------------------------
 
-// Hash without Sine (MIT License)
-// https://www.shadertoy.com/view/4djSRW
 float3 Hash33(float3 p3)
 {
-	p3 = frac(p3 * float3(.1031, .1030, .0973));
+	float3 e;
+	p3 = frexp(p3, e);
+	p3 += e * (1.0 / 129.0);
+	// Hash without Sine (MIT License) https://www.shadertoy.com/view/4djSRW
+	p3 = frac(p3 * float3(1031, 1030, 973));
 	p3 += dot(p3, p3.yxz + 33.33);
 	return frac((p3.xxy + p3.yxx) * p3.zyx);
 }
 
+float Hash31(float3 p)
+{
+	float3 e;
+	p = frexp(p, e);
+	p += e * (1.0 / 129.0);
+	float t = dot(p, float3(17, 527, 113));
+	return frac(sin(t) * 43758.5453123);
+}
+
+float ValueNoise1D(float3 src)
+{
+	float3 i = floor(src);
+	float3 f = frac(src);
+
+	float v1 = Hash31(i + float3(0.0, 0.0, 0.0));
+	float v2 = Hash31(i + float3(1.0, 0.0, 0.0));
+	float v3 = Hash31(i + float3(0.0, 1.0, 0.0));
+	float v4 = Hash31(i + float3(1.0, 1.0, 0.0));
+	float v5 = Hash31(i + float3(0.0, 0.0, 1.0));
+	float v6 = Hash31(i + float3(1.0, 0.0, 1.0));
+	float v7 = Hash31(i + float3(0.0, 1.0, 1.0));
+	float v8 = Hash31(i + float3(1.0, 1.0, 1.0));
+
+	float3 a = f * f * f * (10.0 + f * (-15.0 + f * 6.0));
+
+	return 2.0 * lerp(
+		lerp(lerp(v1, v2, a.x), lerp(v3, v4, a.x), a.y),
+		lerp(lerp(v5, v6, a.x), lerp(v7, v8, a.x), a.y),
+		a.z
+	) - 1.0;
+}
+
+float3 ValueNoise3D(float3 src) {
+	float3 i = floor(src);
+	float3 f = frac(src);
+
+	float3 v1 = Hash33(i + float3(0.0, 0.0, 0.0));
+	float3 v2 = Hash33(i + float3(1.0, 0.0, 0.0));
+	float3 v3 = Hash33(i + float3(0.0, 1.0, 0.0));
+	float3 v4 = Hash33(i + float3(1.0, 1.0, 0.0));
+	float3 v5 = Hash33(i + float3(0.0, 0.0, 1.0));
+	float3 v6 = Hash33(i + float3(1.0, 0.0, 1.0));
+	float3 v7 = Hash33(i + float3(0.0, 1.0, 1.0));
+	float3 v8 = Hash33(i + float3(1.0, 1.0, 1.0));
+
+	float3 a = f * f * f * (10.0 + f * (-15.0 + f * 6.0));
+
+	return 2.0 * lerp(
+		lerp(lerp(v1, v2, a.x), lerp(v3, v4, a.x), a.y),
+		lerp(lerp(v5, v6, a.x), lerp(v7, v8, a.x), a.y),
+		a.z
+	) - 1.0;
+}
+
+float FBM1D(float3 src) {
+	const int NUM_OCTAVES = 4;
+	float f = 1.0;
+	float a = 1.0;
+	float ret = 0.0;
+	for (int i = 0; i < NUM_OCTAVES; ++i) {
+		ret += a * ValueNoise1D(f * src);
+		f *= 2.0;
+		a *= 0.5;
+	}
+	const float s = (1.0 - pow(0.5, float(NUM_OCTAVES))) * 2.0;
+	return ret / s;
+}
+
+//---------------------------------------------------------------------------------------------
+
 float4 PerturbPosition(float4 pos) {
-	float3 perturb = (2 * Hash33(pos.xyz) - 1) * MaxPerturbWidth;
-	pos.xyz += perturb;
+	pos.xyz += ValueNoise3D(pos.xyz) * MaxPerturbWidth;
+	pos.y *= lerp(ScaleYMin, ScaleYMax, ValueNoise1D(float3(pos.xy, 0)) * 0.5 + 0.5);
 	return pos;
 }
 
@@ -188,50 +262,9 @@ float3 TangentNormalToWorldNormal(float3 tangentNormal, float3 normal, float3 po
 	return normalize(tangentNormal.x * tangent + tangentNormal.y * binormal + tangentNormal.z * normal);
 }
 
-float Hash31(float3 p) {
-	float t = dot(p, float3(17, 1527, 113));
-	return frac(sin(t) * 43758.5453123);
-}
-
-float ValueNoise(float3 src) {
-	float3 i = floor(src);
-	float3 f = frac(src);
-
-	float v1 = Hash31(i + float3(0.0, 0.0, 0.0));
-	float v2 = Hash31(i + float3(1.0, 0.0, 0.0));
-	float v3 = Hash31(i + float3(0.0, 1.0, 0.0));
-	float v4 = Hash31(i + float3(1.0, 1.0, 0.0));
-	float v5 = Hash31(i + float3(0.0, 0.0, 1.0));
-	float v6 = Hash31(i + float3(1.0, 0.0, 1.0));
-	float v7 = Hash31(i + float3(0.0, 1.0, 1.0));
-	float v8 = Hash31(i + float3(1.0, 1.0, 1.0));
-
-	float3 a = f * f * f * (10.0 + f * (-15.0 + f * 6.0));
-
-	return 2.0 * lerp(
-		lerp(lerp(v1, v2, a.x), lerp(v3, v4, a.x), a.y),
-		lerp(lerp(v5, v6, a.x), lerp(v7, v8, a.x), a.y),
-		a.z
-	) - 1.0;
-}
-
-float FBM(float3 src) {
-	const int NUM_OCTAVES = 4;
-	float f = 0.25;
-	float a = 1.0;
-	float ret = 0.0;
-	for (int i = 0; i < NUM_OCTAVES; ++i) {
-		ret += a * ValueNoise(f * src);
-		f *= 2.0;
-		a *= 0.5;
-	}
-	const float s = (1.0 - pow(0.5, float(NUM_OCTAVES))) * 2.0;
-	return ret / s;
-}
-
 float3 RandomUnitVector(float3 p) {
-	float r1 = FBM(p);
-	float r2 = FBM(p + float3(42, 12, 91)) * TAU;
+	float r1 = FBM1D(p);
+	float r2 = FBM1D(p + float3(42, 12, 91)) * TAU;
 	float theta = acos(1 - r1 * 0.2);
 	float phi = r2;
 	return float3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
@@ -301,8 +334,8 @@ float4 ZPlotPS(
 technique ZPlotTec < string MMDPass = "zplot"; > {
 	pass PlotZ {
 		AlphaBlendEnable = FALSE;
-		VertexShader = compile vs_2_0 ZPlotVS();
-		PixelShader  = compile ps_2_0 ZPlotPS();
+		VertexShader = compile vs_3_0 ZPlotVS();
+		PixelShader  = compile ps_3_0 ZPlotPS();
 	}
 }
 
@@ -326,15 +359,15 @@ float4 SolidColorPS(uniform float4 color) : COLOR
 // 影描画用テクニック
 technique ShadowTec < string MMDPass = "shadow"; > {
 	pass DrawShadow {
-		VertexShader = compile vs_2_0 PositionOnlyVS();
-		PixelShader  = compile ps_2_0 SolidColorPS(GroundShadowColor);
+		VertexShader = compile vs_3_0 PositionOnlyVS();
+		PixelShader  = compile ps_3_0 SolidColorPS(GroundShadowColor);
 	}
 }
 
 // 輪郭描画用テクニック
 technique EdgeTec < string MMDPass = "edge"; > {
 	pass DrawEdge {
-		VertexShader = compile vs_2_0 PositionOnlyVS();
-		PixelShader  = compile ps_2_0 SolidColorPS(EdgeColor);
+		VertexShader = compile vs_3_0 PositionOnlyVS();
+		PixelShader  = compile ps_3_0 SolidColorPS(EdgeColor);
 	}
 }
