@@ -2,25 +2,27 @@
 // gatagata: モデルをガタガタにします
 //
 
-float3 mPerturbMaxWidth     : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "PerturbMaxWidth";>;
-float3 mPerturbPeriod       : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "PerturbPeriod";>;
-float3 mDistortionPeriod    : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "DistortionPeriod";>;
-float mYScalingMinP         : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "YScalingMin+";>;
-float mYScalingMinM         : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "YScalingMin-";>;
-float mYScalingMaxP         : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "YScalingMax+";>;
-float mYScalingMaxM         : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "YScalingMax-";>;
-float mDistortionAngleP     : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "DistortionAngle+";>;
-float mDistortionAngleM     : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "DistortionAngle-";>;
+float3 mPerturbWidth     : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "PerturbWidth";>;
+float mPerturbPeriodP    : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "PerturbPeriod+";>;
+float mPerturbPeriodM    : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "PerturbPeriod-";>;
+float mDistortionPeriodP : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "DistortionPeriod+";>;
+float mDistortionPeriodM : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "DistortionPeriod-";>;
+float mYScalingMinP      : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "YScalingMin+";>;
+float mYScalingMinM      : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "YScalingMin-";>;
+float mYScalingMaxP      : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "YScalingMax+";>;
+float mYScalingMaxM      : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "YScalingMax-";>;
+float mDistortionAngleP  : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "DistortionAngle+";>;
+float mDistortionAngleM  : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "DistortionAngle-";>;
+float mAmbientLightP     : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "AmbientLight+";>;
+float mAmbientLightM     : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "AmbientLight-";>;
 
-static const float PerturbMaxWidth = mPerturbMaxWidth.x;
-static const float PerturbFrequency = 1.0 / mPerturbPeriod.x;
-static const float YScalingMin = lerp(lerp(0.5, 1.0, mYScalingMinP), 0.0, mYScalingMinM);
-static const float YScalingMax = max(lerp(lerp(0.8, 1.0, mYScalingMaxP), 0.0, mYScalingMaxM), YScalingMin);
-static const float NormalDistortionFrequency = 0.1 / mDistortionPeriod.x;
+static const float PerturbMaxWidth = mPerturbWidth.x;
+static const float PerturbFrequency = 1.0 / lerp(lerp(1.0, 30, mPerturbPeriodP), 0.05, mPerturbPeriodM);
+static const float YScalingMax = lerp(lerp(0.8, 1.0, mYScalingMaxP), 0.005, mYScalingMaxM);
+static const float YScalingMin = min(lerp(lerp(0.5, 1.0, mYScalingMinP), 0.005, mYScalingMinM), YScalingMax);
+static const float NormalDistortionFrequency = 1.0 / lerp(lerp(10, 100, mDistortionPeriodP), 0.5, mDistortionPeriodM);
 static const float NormalDistortionMaxAngle = lerp(lerp(0.2, 1.0, mDistortionAngleP), 0.0, mDistortionAngleM);
-
-// LightColor に対する AmbientColor の大きさ
-static const float AmbientCoeff = 0.1;
+static const float AmbientCoeff = lerp(lerp(0.2, 1.0, mAmbientLightP), 0.0, mAmbientLightM);
 
 //---------------------------------------------------------------------------------------------
 
@@ -42,6 +44,7 @@ float4   EdgeColor         : EDGECOLOR;
 float4   GroundShadowColor : GROUNDSHADOWCOLOR;
 // ライト色
 float3   LightAmbient        : AMBIENT < string Object = "Light"; >;
+float3   LightDiffuse        : DIFFUSE < string Object = "Light"; >;
 static float3 LightColor = LightAmbient * 4;
 static float3 AmbientColor = LightColor * AmbientCoeff;
 
@@ -200,9 +203,12 @@ void MainVS(
 	out float4 oLightClipPos : TEXCOORD0,
 	out float2 oTexCoord : TEXCOORD1,
 	out float3 oNormal : TEXCOORD2,
-	out float3 oWorldPos : TEXCOORD3
+	out float3 oWorldPos : TEXCOORD3,
+	out float3 oModelPos : TEXCOORD4
 ) {
 	pos = PerturbPosition(pos);
+
+	oModelPos = pos.xyz;
 
 	// カメラ視点のワールドビュー射影変換
 	oPos = mul(pos, WorldViewProjMatrix);
@@ -274,6 +280,7 @@ float3 Phong(
 float4 BaseColor(float2 tex, uniform bool useTexture)
 {
 	float4 baseColor = float4(MaterialAmbient, MaterialDiffuse.a);
+	baseColor.rgb *= LightDiffuse * MaterialDiffuse.rgb;
 	if (useTexture) {
 		float4 texColor = tex2D(ObjectTextureSampler, tex);
 		// テクスチャ材質モーフ
@@ -317,10 +324,11 @@ float4 MainPS(
 	float2 tex : TEXCOORD1,
 	float3 normal : TEXCOORD2,
 	float3 worldPos : TEXCOORD3,
+	float3 modelPos : TEXCOORD4,
 	uniform bool useTexture,
 	uniform bool selfShadow
 ) : COLOR0 {
-	float3 tangentNormal = RandomUnitVector(worldPos * NormalDistortionFrequency);
+	float3 tangentNormal = RandomUnitVector(modelPos * NormalDistortionFrequency);
 	normal = TangentNormalToWorldNormal(tangentNormal, normal, worldPos, tex);
 
 	float3 eye = normalize(CameraPosition - worldPos);
