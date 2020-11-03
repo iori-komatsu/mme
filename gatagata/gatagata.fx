@@ -2,24 +2,24 @@
 // gatagata: ƒ‚ƒfƒ‹‚ðƒKƒ^ƒKƒ^‚É‚µ‚Ü‚·
 //
 
-float3 mPerturbWidth     : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "PerturbWidth";>;
-float mPerturbPeriodP    : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "PerturbPeriod+";>;
-float mPerturbPeriodM    : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "PerturbPeriod-";>;
-float mDistortionPeriodP : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "DistortionPeriod+";>;
-float mDistortionPeriodM : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "DistortionPeriod-";>;
-float mYScalingMinP      : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "YScalingMin+";>;
-float mYScalingMinM      : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "YScalingMin-";>;
-float mYScalingMaxP      : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "YScalingMax+";>;
-float mYScalingMaxM      : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "YScalingMax-";>;
-float mDistortionAngleP  : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "DistortionAngle+";>;
-float mDistortionAngleM  : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "DistortionAngle-";>;
-float mAmbientLightP     : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "AmbientLight+";>;
-float mAmbientLightM     : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "AmbientLight-";>;
+float3 mPerturbWidth      : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "PerturbWidth";>;
+float mPerturbPeriodP     : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "PerturbPeriod+";>;
+float mPerturbPeriodM     : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "PerturbPeriod-";>;
+float mDistortionPeriodP  : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "DistortionPeriod+";>;
+float mDistortionPeriodM  : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "DistortionPeriod-";>;
+float mYCompressionP      : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "YCompression+";>;
+float mYCompressionM      : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "YCompression-";>;
+float mYVarianceP         : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "YVariance+";>;
+float mYVarianceM         : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "YVariance-";>;
+float mDistortionAngleP   : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "DistortionAngle+";>;
+float mDistortionAngleM   : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "DistortionAngle-";>;
+float mAmbientLightP      : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "AmbientLight+";>;
+float mAmbientLightM      : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "AmbientLight-";>;
 
 static const float PerturbMaxWidth = mPerturbWidth.x;
 static const float PerturbFrequency = 1.0 / lerp(lerp(1.0, 30, mPerturbPeriodP), 0.05, mPerturbPeriodM);
-static const float YScalingMax = lerp(lerp(0.8, 1.0, mYScalingMaxP), 0.005, mYScalingMaxM);
-static const float YScalingMin = min(lerp(lerp(0.5, 1.0, mYScalingMinP), 0.005, mYScalingMinM), YScalingMax);
+static const float YScalingMin = 1.0 - lerp(lerp(0.5, 0.995, mYCompressionP), 0.0, mYCompressionM);
+static const float YScalingMax = lerp(YScalingMin, 1.0, lerp(lerp(0.5, 1.0, mYVarianceP), 0.0, mYVarianceM));
 static const float NormalDistortionFrequency = 1.0 / lerp(lerp(10, 100, mDistortionPeriodP), 0.5, mDistortionPeriodM);
 static const float NormalDistortionMaxAngle = lerp(lerp(0.2, 1.0, mDistortionAngleP), 0.0, mDistortionAngleM);
 static const float AmbientCoeff = lerp(lerp(0.2, 1.0, mAmbientLightP), 0.0, mAmbientLightM);

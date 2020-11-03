@@ -1,7 +1,5 @@
 # gatagata
 
-![](screenshot.jpg)
+![](assets/screenshot.jpg)
 
 頂点と法線ベクトルをいじってモデルをガタガタにします。廃墟作りにどうぞ。
-
-// TODO: コントローラーを作ってパラメータを変えれるようにしたい

@@ -1,0 +1,48 @@
+body {
+    color: #303030;
+    background-color: #E0E0E0;
+    line-height: 180%;
+    max-width: 40em;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 3em;
+}
+
+dt {
+    font-weight: bold;
+}
+
+dd {
+    margin-bottom: 1em;
+}
+
+h2 {
+    margin-top: 2em;
+}
+
+nav {
+    margin-bottom: 2em;
+}
+
+.placeholder {
+    color: maroon;
+}
+
+.heading {
+    margin-top: 3em;
+    margin-bottom: 3em;
+}
+
+.breaking-change {
+    color: #C01010;
+}
+
+.notice {
+    background-color: #E0E070;
+    padding: 1em;
+}
+
+.memo {
+    background-color: rgb(194, 232, 249);
+    padding: 1em;
+}
