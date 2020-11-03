@@ -17,11 +17,11 @@ float mAmbientLightP      : CONTROLOBJECT<string name = "GatagataController.pmx"
 float mAmbientLightM      : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "AmbientLight-";>;
 
 static const float PerturbMaxWidth = mPerturbWidth.x;
-static const float PerturbFrequency = 1.0 / lerp(lerp(1.0, 30, mPerturbPeriodP), 0.05, mPerturbPeriodM);
-static const float YScalingMin = 1.0 - lerp(lerp(0.5, 0.995, mYCompressionP), 0.0, mYCompressionM);
+static const float PerturbFrequency = 1.0 / lerp(lerp(0.1, 30, mPerturbPeriodP), 0.001, mPerturbPeriodM);
+static const float YScalingMin = 1.0 - lerp(lerp(0.25, 0.995, mYCompressionP), 0.0, mYCompressionM);
 static const float YScalingMax = lerp(YScalingMin, 1.0, lerp(lerp(0.5, 1.0, mYVarianceP), 0.0, mYVarianceM));
 static const float NormalDistortionFrequency = 1.0 / lerp(lerp(10, 100, mDistortionPeriodP), 0.5, mDistortionPeriodM);
-static const float NormalDistortionMaxAngle = lerp(lerp(0.2, 1.0, mDistortionAngleP), 0.0, mDistortionAngleM);
+static const float NormalDistortionMaxAngle = lerp(lerp(0.3, 1.0, mDistortionAngleP), 0.0, mDistortionAngleM);
 static const float AmbientCoeff = lerp(lerp(0.2, 1.0, mAmbientLightP), 0.0, mAmbientLightM);
 
 //---------------------------------------------------------------------------------------------
@@ -279,8 +279,7 @@ float3 Phong(
 
 float4 BaseColor(float2 tex, uniform bool useTexture)
 {
-	float4 baseColor = float4(MaterialAmbient, MaterialDiffuse.a);
-	baseColor.rgb *= LightDiffuse * MaterialDiffuse.rgb;
+	float4 baseColor = float4(lerp(MaterialAmbient, MaterialDiffuse, LightDiffuse), MaterialDiffuse.a);
 	if (useTexture) {
 		float4 texColor = tex2D(ObjectTextureSampler, tex);
 		// テクスチャ材質モーフ
