@@ -2,10 +2,12 @@
 // gatagata: ƒ‚ƒfƒ‹‚ðƒKƒ^ƒKƒ^‚É‚µ‚Ü‚·
 //
 
-static const float MaxPerturbWidth = 10.0;
-static const float Scale = 0.1;
-static const float ScaleYMin = 0.2;
-static const float ScaleYMax = 0.8;
+static const float PerturbMaxWidth = 10.0;
+static const float PerturbFrequency = 1;
+static const float YScalingMin = 0.2;
+static const float YScalingMax = 0.8;
+static const float NormalDistortionFrequency = 0.1;
+static const float NormalDistortionMaxAngle = 0.2;
 
 // LightColor ‚É‘Î‚·‚é AmbientColor ‚Ì‘å‚«‚³
 static const float AmbientCoeff = 0.1;
@@ -61,39 +63,67 @@ sampler ShadowBufferSampler : register(s0);
 
 //---------------------------------------------------------------------------------------------
 
-float3 Hash33(float3 p3)
+float  hash(float  v) { return frac(sin(v * 78.233) * 43758.5453123); }
+float2 hash(float2 v) { return frac(sin(v * 78.233) * 43758.5453123); }
+float3 hash(float3 v) { return frac(sin(v * 78.233) * 43758.5453123); }
+float4 hash(float4 v) { return frac(sin(v * 78.233) * 43758.5453123); }
+
+float hash12(float2 v)
 {
-	float3 e;
-	p3 = frexp(p3, e);
-	p3 += e * (1.0 / 129.0);
-	// Hash without Sine (MIT License) https://www.shadertoy.com/view/4djSRW
-	p3 = frac(p3 * float3(1031, 1030, 973));
-	p3 += dot(p3, p3.yxz + 33.33);
-	return frac((p3.xxy + p3.yxx) * p3.zyx);
+	float2 e;
+	v = frexp(v, e);
+	v += e * (1.0 / 129.0);
+	return hash(hash(v.x) + v.y);
 }
 
-float Hash31(float3 p)
+float hash13(float3 v)
 {
 	float3 e;
-	p = frexp(p, e);
-	p += e * (1.0 / 129.0);
-	float t = dot(p, float3(17, 527, 113));
-	return frac(sin(t) * 43758.5453123);
+	v = frexp(v, e);
+	v += e * (1.0 / 129.0);
+	return hash(hash(hash(v.x) + v.y) + v.z);
 }
 
-float ValueNoise1D(float3 src)
+float3 hash33(float3 v)
+{
+	float3 e;
+	v = frexp(v, e);
+	v += e * (1.0 / 129.0);
+	return hash(hash(hash(v.x + float3(0, 4.31265, 9.38974)) + v.y) + v.z);
+}
+
+float ValueNoise12(float2 src)
+{
+	float2 i = floor(src);
+	float2 f = frac(src);
+
+	float v1 = hash12(i + float2(0.0, 0.0));
+	float v2 = hash12(i + float2(1.0, 0.0));
+	float v3 = hash12(i + float2(0.0, 1.0));
+	float v4 = hash12(i + float2(1.0, 1.0));
+
+	float2 a = f * f * f * (10.0 + f * (-15.0 + f * 6.0));
+
+	return 2.0 * lerp(
+		lerp(v1, v2, a.x),
+		lerp(v3, v4, a.x),
+		a.y
+	) - 1.0;
+}
+
+float ValueNoise13(float3 src)
 {
 	float3 i = floor(src);
 	float3 f = frac(src);
 
-	float v1 = Hash31(i + float3(0.0, 0.0, 0.0));
-	float v2 = Hash31(i + float3(1.0, 0.0, 0.0));
-	float v3 = Hash31(i + float3(0.0, 1.0, 0.0));
-	float v4 = Hash31(i + float3(1.0, 1.0, 0.0));
-	float v5 = Hash31(i + float3(0.0, 0.0, 1.0));
-	float v6 = Hash31(i + float3(1.0, 0.0, 1.0));
-	float v7 = Hash31(i + float3(0.0, 1.0, 1.0));
-	float v8 = Hash31(i + float3(1.0, 1.0, 1.0));
+	float v1 = hash13(i + float3(0.0, 0.0, 0.0));
+	float v2 = hash13(i + float3(1.0, 0.0, 0.0));
+	float v3 = hash13(i + float3(0.0, 1.0, 0.0));
+	float v4 = hash13(i + float3(1.0, 1.0, 0.0));
+	float v5 = hash13(i + float3(0.0, 0.0, 1.0));
+	float v6 = hash13(i + float3(1.0, 0.0, 1.0));
+	float v7 = hash13(i + float3(0.0, 1.0, 1.0));
+	float v8 = hash13(i + float3(1.0, 1.0, 1.0));
 
 	float3 a = f * f * f * (10.0 + f * (-15.0 + f * 6.0));
 
@@ -104,18 +134,18 @@ float ValueNoise1D(float3 src)
 	) - 1.0;
 }
 
-float3 ValueNoise3D(float3 src) {
+float3 ValueNoise33(float3 src) {
 	float3 i = floor(src);
 	float3 f = frac(src);
 
-	float3 v1 = Hash33(i + float3(0.0, 0.0, 0.0));
-	float3 v2 = Hash33(i + float3(1.0, 0.0, 0.0));
-	float3 v3 = Hash33(i + float3(0.0, 1.0, 0.0));
-	float3 v4 = Hash33(i + float3(1.0, 1.0, 0.0));
-	float3 v5 = Hash33(i + float3(0.0, 0.0, 1.0));
-	float3 v6 = Hash33(i + float3(1.0, 0.0, 1.0));
-	float3 v7 = Hash33(i + float3(0.0, 1.0, 1.0));
-	float3 v8 = Hash33(i + float3(1.0, 1.0, 1.0));
+	float3 v1 = hash33(i + float3(0.0, 0.0, 0.0));
+	float3 v2 = hash33(i + float3(1.0, 0.0, 0.0));
+	float3 v3 = hash33(i + float3(0.0, 1.0, 0.0));
+	float3 v4 = hash33(i + float3(1.0, 1.0, 0.0));
+	float3 v5 = hash33(i + float3(0.0, 0.0, 1.0));
+	float3 v6 = hash33(i + float3(1.0, 0.0, 1.0));
+	float3 v7 = hash33(i + float3(0.0, 1.0, 1.0));
+	float3 v8 = hash33(i + float3(1.0, 1.0, 1.0));
 
 	float3 a = f * f * f * (10.0 + f * (-15.0 + f * 6.0));
 
@@ -126,25 +156,26 @@ float3 ValueNoise3D(float3 src) {
 	) - 1.0;
 }
 
-float FBM1D(float3 src) {
-	const int NUM_OCTAVES = 4;
-	float f = 1.0;
-	float a = 1.0;
+float FBM13(float3 src) {
+	const float3x3 M = 2.0 * float3x3(
+		 0.54030231,  0.45464871,  0.70807342,
+		-0.84147098,  0.29192658,  0.45464871,
+		 0.0       , -0.84147098,  0.54030231);
 	float ret = 0.0;
-	for (int i = 0; i < NUM_OCTAVES; ++i) {
-		ret += a * ValueNoise1D(f * src);
-		f *= 2.0;
-		a *= 0.5;
-	}
-	const float s = (1.0 - pow(0.5, float(NUM_OCTAVES))) * 2.0;
-	return ret / s;
+	ret += 0.5000 * ValueNoise13(src); src = mul(M, src);
+	ret += 0.2500 * ValueNoise13(src); src = mul(M, src);
+	ret += 0.1250 * ValueNoise13(src); src = mul(M, src);
+	ret += 0.0625 * ValueNoise13(src); src = mul(M, src);
+	return ret * (1.0 / 0.9375);
 }
 
 //---------------------------------------------------------------------------------------------
 
 float4 PerturbPosition(float4 pos) {
-	pos.xyz += ValueNoise3D(pos.xyz) * MaxPerturbWidth;
-	pos.y *= lerp(ScaleYMin, ScaleYMax, ValueNoise1D(float3(pos.xy, 0)) * 0.5 + 0.5);
+	float3 noise1 = ValueNoise33(pos.xyz * PerturbFrequency);
+	float  noise2 = ValueNoise12(pos.xy  * PerturbFrequency);
+	pos.xyz += noise1 * PerturbMaxWidth;
+	pos.y *= lerp(YScalingMin, YScalingMax, noise2);
 	return pos;
 }
 
@@ -263,9 +294,9 @@ float3 TangentNormalToWorldNormal(float3 tangentNormal, float3 normal, float3 po
 }
 
 float3 RandomUnitVector(float3 p) {
-	float r1 = FBM1D(p);
-	float r2 = FBM1D(p + float3(42, 12, 91)) * TAU;
-	float theta = acos(1 - r1 * 0.2);
+	float r1 = FBM13(p);
+	float r2 = FBM13(p + float3(42, 12, 91)) * TAU;
+	float theta = acos(1 - r1 * NormalDistortionMaxAngle);
 	float phi = r2;
 	return float3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
 }
@@ -279,7 +310,7 @@ float4 MainPS(
 	uniform bool useTexture,
 	uniform bool selfShadow
 ) : COLOR0 {
-	float3 tangentNormal = RandomUnitVector(worldPos * 0.1 / Scale);
+	float3 tangentNormal = RandomUnitVector(worldPos * NormalDistortionFrequency);
 	normal = TangentNormalToWorldNormal(tangentNormal, normal, worldPos, tex);
 
 	float3 eye = normalize(CameraPosition - worldPos);
