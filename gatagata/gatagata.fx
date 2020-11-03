@@ -2,12 +2,22 @@
 // gatagata: ƒ‚ƒfƒ‹‚ðƒKƒ^ƒKƒ^‚É‚µ‚Ü‚·
 //
 
-static const float PerturbMaxWidth = 10.0;
-static const float PerturbFrequency = 1;
-static const float YScalingMin = 0.2;
-static const float YScalingMax = 0.8;
-static const float NormalDistortionFrequency = 0.1;
-static const float NormalDistortionMaxAngle = 0.2;
+float3 mPerturbMaxWidth     : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "PerturbMaxWidth";>;
+float3 mPerturbPeriod       : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "PerturbPeriod";>;
+float3 mDistortionPeriod    : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "DistortionPeriod";>;
+float mYScalingMinP         : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "YScalingMin+";>;
+float mYScalingMinM         : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "YScalingMin-";>;
+float mYScalingMaxP         : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "YScalingMax+";>;
+float mYScalingMaxM         : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "YScalingMax-";>;
+float mDistortionAngleP     : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "DistortionAngle+";>;
+float mDistortionAngleM     : CONTROLOBJECT<string name = "GatagataController.pmx"; string item = "DistortionAngle-";>;
+
+static const float PerturbMaxWidth = mPerturbMaxWidth.x;
+static const float PerturbFrequency = 1.0 / mPerturbPeriod.x;
+static const float YScalingMin = lerp(lerp(0.5, 1.0, mYScalingMinP), 0.0, mYScalingMinM);
+static const float YScalingMax = max(lerp(lerp(0.8, 1.0, mYScalingMaxP), 0.0, mYScalingMaxM), YScalingMin);
+static const float NormalDistortionFrequency = 0.1 / mDistortionPeriod.x;
+static const float NormalDistortionMaxAngle = lerp(lerp(0.2, 1.0, mDistortionAngleP), 0.0, mDistortionAngleM);
 
 // LightColor ‚É‘Î‚·‚é AmbientColor ‚Ì‘å‚«‚³
 static const float AmbientCoeff = 0.1;
@@ -175,7 +185,7 @@ float4 PerturbPosition(float4 pos) {
 	float3 noise1 = ValueNoise33(pos.xyz * PerturbFrequency);
 	float  noise2 = ValueNoise12(pos.xy  * PerturbFrequency);
 	pos.xyz += noise1 * PerturbMaxWidth;
-	pos.y *= lerp(YScalingMin, YScalingMax, noise2);
+	pos.y = min(pos.y * lerp(YScalingMin, YScalingMax, noise2), pos.y);
 	return pos;
 }
 
