@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Gatagata</title>
+    <link rel="stylesheet" type="text/css" href="./assets/style.css">
+  </head>
+  <body>
+
+<div class="heading">
+  <h1>ガタガタエフェクト</h1>
+  <p><em>by Iori Komatsu (<a href="https://twitter.com/iori_komatsu" target="_blank">@iori_komatsu</a>)</em></p>
+</div>
+
+<p><img src="./assets/screenshot.jpg" style="max-width: 40em;"></p>
+
+<p>モデルをガタガタにします。街モデルに適用すると破壊された街っぽくすることもできます。</p>
+
+<h2 id="how_to_use">使い方</h2>
+
+<ol>
+  <li>エフェクト割当でガタガタさせたいモデルに gatagata.fx を適用します。</li>
+  <li>GatagataController.pmx を MMD に読み込みます。</li>
+  <li>GatagataController のボーンに PerturbWidth というものがあるので、そのX座標を動かしてみてください。モデルがガタガタになります。</li>
+</ol>
+
+<h2 id="parameters">パラメータ</h2>
+
+このエフェクトが実際にやっているのは以下の３つです。
+
+<ul>
+  <li><strong>Perturb:</strong> モデルの頂点をランダムにずらす</li>
+  <li><strong>YCompression:</strong> モデルをY方向に圧縮する</li>
+  <li><strong>Distortion:</strong> モデルの法線ベクトルをランダムに歪める</li>
+</ul>
+
+これら3つの効果を GatagataController のボーンと表情操作を使って調整することができます。
+
+<dl>
+  <dt>PerturbWidth</dt>
+  <dd>モデルの頂点のずれの大きさです。</dd>
+
+  <dt>PerturbPeriod</dt>
+  <dd>モデルの頂点のずれの変化の激しさを決めます。(といってもイメージわかないと思うので実際に PerturbPeriod+ をいじってみるといいかも)</dd>
+
+  <dt>YCompression</dt>
+  <dd>モデルがY方向にどれぐらい圧縮されるかを決めます。YCompression- を 1.0 にすると全く圧縮されなくなります。</dd>
+
+  <dt>YVariance</dt>
+  <dd>圧縮率がどれぐらいの範囲でばらつくかを決めます。YVariance- を 1.0 にすると全くばらつきません。</dd>
+
+  <dt>DistortionPeriod</dt>
+  <dd>法線ベクトルの歪みの変化の激しさを決めます。これも試してみると何が起こるかわかるかと思います。</dd>
+
+  <dt>DistortionAngle</dt>
+  <dd>法線ベクトルがどれぐらい歪むかを決めます。</dd>
+
+  <dt>AmbientLight</dt>
+  <dd>環境光の強さを調整します。モデルが暗いなと思ったらこれで調整してください。</dd>
+</dl>
+
+※ アニメーション制作時などで「ガタガタしていない状態のモデル」が必要な場合は PerturbWidth = 0.0, YCompression- = 1.0, DistortionAngle- = 1.0 に設定してください。
+
+<h2 id="history">更新履歴</h2>
+
+<dl>
+  <dt>2020-11-03 rev.2</dt>
+  <dd>モデルに対してエフェクトを適用すると色が黒くなるバグを修正。各種パラメータの初期値を調整。</dd>
+
+  <dt>2020-11-03 rev.1</dt>
+  <dd>公開</dd>
+</dl>
+
+<h2 id="license">利用条件</h2>
+
+<p>このエフェクトは MIT License の下に配布されています。</p>
+
+  </body>
+</html>
