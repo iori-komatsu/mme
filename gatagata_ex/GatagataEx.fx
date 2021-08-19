@@ -2,10 +2,11 @@
 // gatagata: モデルをガタガタにします
 //
 
-#include "sub/gatagata_ex.fxsub"
-#include "sub/HitTexture.fxsub"
+#include "sub/GatagataEx.fxsub"
 
 //---------------------------------------------------------------------------------------------
+
+static const float PI = 3.14159265;
 
 // 座法変換行列
 float4x4 WorldViewProjMatrix      : WORLDVIEWPROJECTION;
@@ -26,7 +27,7 @@ float4   GroundShadowColor : GROUNDSHADOWCOLOR;
 // ライト色
 float3   LightAmbient        : AMBIENT < string Object = "Light"; >;
 float3   LightDiffuse        : DIFFUSE < string Object = "Light"; >;
-static float3 LightColor = LightAmbient * 4;
+static float3 LightColor = LightAmbient * 6;
 static float3 AmbientColor = LightColor * AmbientCoeff;
 
 // テクスチャ材質モーフ値
@@ -49,30 +50,10 @@ sampler ObjectTextureSampler = sampler_state {
 	ADDRESSV  = WRAP;
 };
 
-static const float PI = 3.14159265;
-static const float TAU = 2 * PI;
-
 // シャドウバッファのサンプラ。"register(s0)"なのはMMDがs0を使っているから
 sampler ShadowBufferSampler : register(s0);
 
-shared texture HitHistory1RT : RENDERCOLORTARGET;
-sampler HitHistory1Sampler = sampler_state {
-    Texture = (HitHistory1RT);
-    ADDRESSU = CLAMP;
-    ADDRESSV = CLAMP;
-    MAGFILTER = NONE;
-    MINFILTER = NONE;
-    MIPFILTER = NONE;
-};
-
 //---------------------------------------------------------------------------------------------
-
-float SampleHitState(float4 worldPos) {
-	float2 uv = WorldPosToHitTexturePos(worldPos).xy;
-	uv += HitTextureOffset;
-	uv = float2(0.5 + 0.5 * uv.x, 0.5 - 0.5 * uv.y);
-	return tex2Dlod(HitHistory1Sampler, float4(uv, 0, 0)).g;
-}
 
 // 頂点シェーダ
 void MainVS(
@@ -90,7 +71,7 @@ void MainVS(
 	out float  oHitState : TEXCOORD5
 ) {
 	oHitState = SampleHitState(mul(pos, WorldMatrix));
-	if (oHitState > 1e-8) {
+	if (oHitState > HitThreshold) {
 		pos = PerturbPosition(pos);
 	}
 
@@ -191,9 +172,9 @@ float4 MainPS(
 	uniform bool selfShadow
 ) : COLOR0 {
 	float3 ambientColor = AmbientColor;
-	if (hitState > 1e-8) {
+	if (hitState > HitThreshold) {
 		normal = DistortNormal(modelPos, worldPos, normal, tex);
-		ambientColor *= 0.7;
+		ambientColor *= 1.0 - mReduceLight;
 	}
 
 	float3 eye = normalize(CameraPosition - worldPos);

@@ -1,3 +1,8 @@
+#ifndef GATAGATA_EX_INCLUDED
+#define GATAGATA_EX_INCLUDED
+
+#include "sub/HitTexture.fxsub"
+
 float3 mPerturbWidth      : CONTROLOBJECT<string name = "GatagataExController.pmx"; string item = "PerturbWidth";>;
 float mPerturbPeriodP     : CONTROLOBJECT<string name = "GatagataExController.pmx"; string item = "PerturbPeriod+";>;
 float mPerturbPeriodM     : CONTROLOBJECT<string name = "GatagataExController.pmx"; string item = "PerturbPeriod-";>;
@@ -11,6 +16,7 @@ float mDistortionAngleP   : CONTROLOBJECT<string name = "GatagataExController.pm
 float mDistortionAngleM   : CONTROLOBJECT<string name = "GatagataExController.pmx"; string item = "DistortionAngle-";>;
 float mAmbientLightP      : CONTROLOBJECT<string name = "GatagataExController.pmx"; string item = "AmbientLight+";>;
 float mAmbientLightM      : CONTROLOBJECT<string name = "GatagataExController.pmx"; string item = "AmbientLight-";>;
+float mReduceLight        : CONTROLOBJECT<string name = "GatagataExController.pmx"; string item = "ReduceLight";>;
 
 static const float PerturbMaxWidth = mPerturbWidth.x;
 static const float PerturbFrequency = 1.0 / lerp(lerp(0.1, 30, mPerturbPeriodP), 0.001, mPerturbPeriodM);
@@ -19,6 +25,17 @@ static const float YScalingMax = lerp(YScalingMin, 1.0, lerp(lerp(0.5, 1.0, mYVa
 static const float NormalDistortionFrequency = 1.0 / lerp(lerp(10, 100, mDistortionPeriodP), 0.5, mDistortionPeriodM);
 static const float NormalDistortionMaxAngle = lerp(lerp(0.3, 1.0, mDistortionAngleP), 0.0, mDistortionAngleM);
 static const float AmbientCoeff = lerp(lerp(0.2, 1.0, mAmbientLightP), 0.0, mAmbientLightM);
+static const float HitThreshold = 0.1;
+
+shared texture2D HitHistory : RENDERCOLORTARGET;
+sampler HitHistorySampler = sampler_state {
+    Texture = (HitHistory);
+    MAGFILTER = LINEAR;
+    MINFILTER = LINEAR;
+    MIPFILTER = LINEAR;
+    ADDRESSU = BORDER;
+    ADDRESSV = BORDER;
+};
 
 float  hash(float  v) { return frac(sin(v * 78.233) * 43758.5453123); }
 float2 hash(float2 v) { return frac(sin(v * 78.233) * 43758.5453123); }
@@ -126,6 +143,13 @@ float FBM13(float3 src) {
 	return ret * (1.0 / 0.9375);
 }
 
+float SampleHitState(float4 worldPos) {
+	float2 uv = WorldPosToHitTexturePos(worldPos).xy;
+	uv = 0.5 + 0.5 * uv;
+	uv += HitTextureOffset;
+	return tex2Dlod(HitHistorySampler, float4(uv, 0, 0)).r;
+}
+
 float4 PerturbPosition(float4 pos) {
 	float3 noise1 = ValueNoise33(pos.xyz * PerturbFrequency);
 	float  noise2 = ValueNoise12(pos.xy  * PerturbFrequency);
@@ -172,3 +196,5 @@ float3 DistortNormal(
 	float3 tangentNormal = RandomUnitVector(modelPos * NormalDistortionFrequency);
 	return TangentNormalToWorldNormal(tangentNormal, normal, worldPos, tex);
 }
+
+#endif

@@ -1,12 +1,14 @@
 #ifndef HIT_TEXTURE_INCLUDED
 #define HIT_TEXTURE_INCLUDED
 
-#define HITTEXTURE_SIZE 128
-#define RESET_INTERVAL 15
-#define PLANE_WIDTH 60
-#define PLANE_HEIGHT 60
+float3 mCenter : CONTROLOBJECT<string name = "GatagataExController.pmx"; string item = "Center";>;
+float3 mSize   : CONTROLOBJECT<string name = "GatagataExController.pmx"; string item = "Size";>;
+float3 mYmin   : CONTROLOBJECT<string name = "GatagataExController.pmx"; string item = "Ymin";>;
+float3 mYmax   : CONTROLOBJECT<string name = "GatagataExController.pmx"; string item = "Ymax";>;
 
-static const float2 HitTextureOffset = float2(0.5/HITTEXTURE_SIZE, 0.5/HITTEXTURE_SIZE);
+static const float PlaneSize = abs(mSize.x) * 2;
+static const int HitTextureSize = 512;
+static const float2 HitTextureOffset = float2(0.5, 0.5) / HitTextureSize;
 
 // ビュー行列を返す。
 // eye: カメラの座標
@@ -16,13 +18,12 @@ float4x4 MatrixLookAtLH(float3 eye, float3 at, float3 up) {
     float3 zaxis = normalize(at - eye);
     float3 xaxis = normalize(cross(up, zaxis));
     float3 yaxis = cross(zaxis, xaxis);
-    float4x4 mat = {
+    return float4x4(
                  xaxis.x,          yaxis.x,          zaxis.x,    0,
                  xaxis.y,          yaxis.y,          zaxis.y,    0,
                  xaxis.z,          yaxis.z,          zaxis.z,    0,
-        -dot(xaxis, eye), -dot(yaxis, eye), -dot(zaxis, eye),    1,
-    };
-    return mat;
+        -dot(xaxis, eye), -dot(yaxis, eye), -dot(zaxis, eye),    1
+	);
 }
 
 // 正射影行列を返す。
@@ -31,55 +32,24 @@ float4x4 MatrixLookAtLH(float3 eye, float3 at, float3 up) {
 // zn: 近クリップ平面の z 値
 // zf: 遠クリップ平面の z 値
 float4x4 MatrixOrthoLH(float w, float h, float zn, float zf) {
-    float4x4 mat = {
+    return float4x4 (
         2/w,   0,          0,    0,
           0, 2/h,          0,    0,
           0,   0,  1/(zf-zn),    0,
-          0,   0, zn/(zn-zf),    1,
-    };
-    return mat;
+          0,   0, zn/(zn-zf),    1
+	);
 }
 
-// 透視射影行列を返す。(視野角で指定)
-// fov: y方向の視野角 (ラジアン)
-// aspect: アスペクト比 (幅 / 高さ)
-// zn: 近クリップ平面の z 値
-// zf: 遠クリップ平面の z 値
-float4x4 MatrixPerspectiveFovLH(float fov, float aspectRatio, float zn, float zf) {
-    float h = 1/tan(0.5 * fov);
-    float w = aspectRatio * h;
-    float4x4 mat = {
-        w,    0,             0,    0,
-        0,    h,             0,    0,
-        0,    0,    zf/(zf-zn),    1,
-        0,    0, zn*zf/(zn-zf),    0,
-    };
-    return mat;
-}
+static const float4x4 HitTestViewMatrix = MatrixLookAtLH(
+	mCenter, mCenter + float3(0, 1, 0), float3(0, 0, 1)
+);
+static const float4x4 HitTestProjMatrix = MatrixOrthoLH(
+	PlaneSize, PlaneSize, min(mYmin.y, mYmax.y), max(mYmin.y, mYmax.y)
+);
+static const float4x4 HitTestViewProjMatrix = mul(HitTestViewMatrix, HitTestProjMatrix);
 
-// 透視射影行列を返す。(ビューボリュームのサイズで指定)
-// w: 近クリップ平面におけるビューボリュームの幅
-// h: 近クリップ平面におけるビューボリュームの高さ
-// zn: 近クリップ平面の z 値
-// zf: 遠クリップ平面の z 値
-float4x4 MatrixPerspectiveLH(float w, float h, float zn, float zf) {
-    float4x4 mat = {
-        2*zn/w,      0,             0,    0,
-             0, 2*zn/h,             0,    0,
-             0,      0,    zf/(zf-zn),    1,
-             0,      0, zn*zf/(zn-zf),    0,
-    };
-    return mat;
-}
-
-float4 WorldPosToHitTexturePos(float4 worldPos) {
-    // 真上を見上げるような View 行列を作る
-    float4x4 view = MatrixLookAtLH(float3(0, 0, 0), float3(0, 1, 0), float3(0, 0, -1));
-
-    // z が [-5, 5] なものだけが映るような正射影行列を作る
-    float4x4 proj = MatrixOrthoLH(PLANE_WIDTH, PLANE_HEIGHT, -2, 2);
-
-    return mul(mul(worldPos, view), proj);
+inline float4 WorldPosToHitTexturePos(float4 worldPos) {
+    return mul(worldPos, HitTestViewProjMatrix);
 }
 
 #endif
