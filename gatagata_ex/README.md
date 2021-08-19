@@ -1,5 +1,7 @@
-# gatagata
+# gatagata_ex
 
 ![](assets/screenshot.jpg)
 
-頂点と法線ベクトルをいじってモデルをガタガタにします。廃墟作りにどうぞ。
+TODO: スクショを更新
+
+gatagata エフェクトに当たり判定を付けたもの。
