@@ -1,7 +1,7 @@
 #ifndef GATAGATA_EX_INCLUDED
 #define GATAGATA_EX_INCLUDED
 
-#include "sub/HitTexture.fxsub"
+#include "sub/HitTest.fxsub"
 
 float3 mPerturbWidth      : CONTROLOBJECT<string name = "GatagataExController.pmx"; string item = "PerturbWidth";>;
 float mPerturbPeriodP     : CONTROLOBJECT<string name = "GatagataExController.pmx"; string item = "PerturbPeriod+";>;

@@ -1,4 +1,4 @@
-#include "sub/HitTexture.fxsub"
+#include "sub/HitTest.fxsub"
 
 float CurrentTime : TIME < bool SyncInEditMode = true; >;
 float4x4 ViewProjMatrix : VIEWPROJECTION;

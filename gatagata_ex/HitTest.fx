@@ -1,4 +1,6 @@
-#include "sub/HitTexture.fxsub"
+// HitTest: 当たり判定をレンダリングターゲットに書き込む
+
+#include "sub/HitTest.fxsub"
 
 float4x4 WorldMatrix : WORLD;
 

@@ -1,5 +1,5 @@
 //
-// gatagata: モデルをガタガタにします
+// gatagata_ex: 当たり判定付き gatagata エフェクト
 //
 
 #include "sub/GatagataEx.fxsub"
