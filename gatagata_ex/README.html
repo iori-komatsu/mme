@@ -2,27 +2,41 @@
 <html>
   <head>
     <meta charset="UTF-8">
-    <title>Gatagata</title>
+    <title>GatagataEx</title>
     <link rel="stylesheet" type="text/css" href="./assets/style.css">
   </head>
   <body>
 
 <div class="heading">
-  <h1>ガタガタエフェクト</h1>
+  <h1>当たり判定付きガタガタエフェクト</h1>
   <p><em>by Iori Komatsu (<a href="https://twitter.com/iori_komatsu" target="_blank">@iori_komatsu</a>)</em></p>
 </div>
 
-<p><img src="./assets/screenshot.jpg" style="max-width: 40em;"></p>
+<p><img src="./assets/screenshot.png" style="max-width: 40em;"></p>
 
-<p>モデルをガタガタにします。街モデルに適用すると破壊された街っぽくすることもできます。</p>
+<p>モデルをガタガタにします。街モデルに適用すると破壊された街っぽくすることもできます。当たり判定付きなので、対象のモデルに当たった場所だけ破壊されたような表現ができます。</p>
 
 <h2 id="how_to_use">使い方</h2>
 
+<p>わりと使い方が難しいのでよく読んで利用してください。</p>
+
 <ol>
-  <li>エフェクト割当でガタガタさせたいモデルに gatagata.fx を適用します。</li>
-  <li>GatagataController.pmx を MMD に読み込みます。</li>
-  <li>GatagataController のボーンに PerturbWidth というものがあるので、そのX座標を動かしてみてください。モデルがガタガタになります。</li>
+  <li>エフェクト割当でガタガタさせたいモデルに GatagataEx.fx を適用します。</li>
+  <li>GatagataExController.pmx を MMD に読み込みます。</li>
+  <li>GatagataExController が選択された状態で GatagataExController設定例.vmd を読み込みます。</li>
+  <li>エフェクト割当の HitRT タブを開き、当たり判定を持たせたいオブジェクト(破壊する側)だけにチェックが入った状態にします。</li>
 </ol>
+
+これだけで最低限動く状態になります。あとはシーンに合わせて以下の調整をしてください。ただし、<strong>シーンの 0 フレーム目は破壊状況が強制的に初期化されるため、動作をチェックするときは 1 フレーム目以降で行ってください</strong>。
+
+<ul>
+  <li>GatagataExController の Visualize を 1 にすると当たり判定を行うエリアが表示されます。調整中はこの状態にしておくと便利でしょう。調整が終わったら 0 に戻してください。</li>
+  <li>GatagataExController の Reset を 1 にすると破壊状況がリセットされます。きれいな状態にしたいときはこの機能を使ってください。</li>
+  <li>Center というボーンを動かすと当たり判定を行うエリアを移動できます。回転はできません。</li>
+  <li>Size ボーンの x 座標を動かすと当たり判定エリアのサイズを変更できます。</li>
+  <li>Ymin, Ymax の y 座標を動かすと当たり判定が存在する Y 座標の範囲を変更できます。y 座標以外は無視されるので注意してください。</li>
+  <li>当たり判定を持つモデルのサイズを Scale エフェクトで変更してる場合、HitRT タブでそのモデルに割り当てられているエフェクトを HitTest.fx から HitTestScale.fx に変更してください。</li>
+</ul>
 
 <h2 id="parameters">パラメータ</h2>
 
@@ -34,7 +48,7 @@
   <li><strong>Distortion:</strong> モデルの法線ベクトルをランダムに歪める</li>
 </ul>
 
-これら3つの効果を GatagataController のボーンと表情操作を使って調整することができます。
+これら3つの効果を GatagataExController のボーンと表情操作を使って調整することができます。
 
 <dl>
   <dt>PerturbWidth</dt>
@@ -57,17 +71,15 @@
 
   <dt>AmbientLight</dt>
   <dd>環境光の強さを調整します。モデルが暗いなと思ったらこれで調整してください。</dd>
-</dl>
 
-※ アニメーション制作時などで「ガタガタしていない状態のモデル」が必要な場合は PerturbWidth = 0.0, YCompression- = 1.0, DistortionAngle- = 1.0 に設定してください。
+  <dt>ReduceLight</dt>
+  <dd>破壊状態のときに環境光の強さを減らすことができます。これを大きくするほど光の減少幅が大きくなります。</dd>
+</dl>
 
 <h2 id="history">更新履歴</h2>
 
 <dl>
-  <dt>2020-11-03 rev.2</dt>
-  <dd>モデルに対してエフェクトを適用すると色が黒くなるバグを修正。各種パラメータの初期値を調整。</dd>
-
-  <dt>2020-11-03 rev.1</dt>
+  <dt>2021-08-29 rev.1</dt>
   <dd>公開</dd>
 </dl>
 
