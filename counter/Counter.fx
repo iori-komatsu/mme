@@ -16,6 +16,29 @@ float3 mCount  : CONTROLOBJECT<string name = "Counter.pmx"; string item = "Count
 static const float2 NDCSize = abs(mSize.xy / ViewportSize);
 static const float2 PxSize = abs(mSize.xy);
 static const float  Value = mCount.x;
+static int Keta = int(log10(max(1.0, Value))) + 1;
+static int NumComma = (Keta - 1) / 3;
+static int KetaWithComma = Keta + NumComma;
+
+static const float4 BackgroundColor = float4(0.9, 0.9, 0.9, 1.0);
+
+//-----------------------------------------------------------------------------
+
+texture2D DigitsTexture <
+    string ResourceName = "digits.png";
+	string Format = "D3DFMT_A16B16G16R16F";
+>;
+sampler2D DigitsSamp = sampler_state {
+    Texture = <DigitsTexture>;
+    MinFilter = ANISOTROPIC;
+    MagFilter = ANISOTROPIC;
+    MipFilter = NONE;
+    AddressU = CLAMP;
+    AddressV = CLAMP;
+};
+
+static const float2 DigitsTextureSize = float2(1100, 200);
+static float2 OneDigitSize = float2(100, 200) / DigitsTextureSize;
 
 //-----------------------------------------------------------------------------
 
@@ -34,19 +57,37 @@ void VS(
 	);
 
 	oPos = float4(ndcPos, 0.0, 1.0);
-	oCoord = coord;
+	oCoord = coord + ViewportOffset;
 }
 
 float4 PS(float2 coord : TEXCOORD0) : COLOR {
-	int keta = int(log10(max(1.0, Value))) + 1;
 	float2 pixelPos = coord * PxSize;
-	int i = int(pixelPos.x / PxSize.y);
-	if (i >= keta) {
-		return float4(0, 0, 0, 0);
+	float digitWidth = PxSize.y * 0.5;
+	// 左から数えて何桁目か (コンマ含む)
+	int il = int(pixelPos.x / digitWidth);
+	if (il >= KetaWithComma) {
+		return BackgroundColor;
 	}
-	int k = keta - i - 1;
-	float d = fmod(floor(Value / pow(10.0, k)), 10);
-    return float4(d/9, d/9, d/9, 1.0);
+	// 右から数えて何桁目か (コンマ含む)
+	int ir = KetaWithComma - il - 1;
+	// 表示すべき数字
+	int d;
+	if (ir % 4 == 3) {
+		d = 10; // コンマを表示する
+	} else {
+		int numCommaRight = (ir + 1) / 4; // 右にあるコンマの数
+		int kr = ir - numCommaRight; // 右から数えて何桁目か (コンマ含まず)
+		d = fmod(floor(Value / pow(10.0, kr)), 10);
+	}
+
+	float texLeft = OneDigitSize.x * d;
+	float texRight = OneDigitSize.x * (d + 1);
+	float2 uv = float2(
+		lerp(texLeft, texRight, frac(pixelPos.x / digitWidth)),
+		1.0 - coord.y);
+
+	float4 colorFG = tex2D(DigitsSamp, uv);
+    return float4(lerp(BackgroundColor.rgb, colorFG.rgb, colorFG.a), 1.0);
 }
 
 //-----------------------------------------------------------------------------
