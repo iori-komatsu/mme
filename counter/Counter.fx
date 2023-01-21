@@ -13,12 +13,18 @@ float3 mCenter : CONTROLOBJECT<string name = "Counter.pmx"; string item = "Cente
 float3 mSize   : CONTROLOBJECT<string name = "Counter.pmx"; string item = "Size";>;
 float3 mCount  : CONTROLOBJECT<string name = "Counter.pmx"; string item = "Count";>;
 
-static const float2 NDCSize = abs(mSize.xy / ViewportSize);
-static const float2 PxSize = abs(mSize.xy);
+static const float FontSizePx = abs(mSize.y);
+static const float CharWidthPx = FontSizePx * 0.5;
+static const float CharHeightPx = FontSizePx;
+
 static const float  Value = mCount.x;
+
 static int Keta = int(log10(max(1.0, Value + 0.5))) + 1;
 static int NumComma = (Keta - 1) / 3;
 static int KetaWithComma = Keta + NumComma;
+static float TextBoxWidthPx = CharWidthPx * KetaWithComma;
+static float TextBoxHeightPx = CharHeightPx;
+static float2 TextBoxSizePx = float2(TextBoxWidthPx, TextBoxHeightPx);
 
 static const float4 BackgroundColor = float4(0.9, 0.9, 0.9, 1.0);
 
@@ -51,8 +57,8 @@ void VS(
 	float4 clipCenter = mul(float4(mCenter, 1.0), ViewProjMatrix);
 	float2 ndcCenter = clipCenter.xy / clipCenter.w;
 	float2 ndcPos = lerp(
-		ndcCenter - NDCSize * 0.5,
-		ndcCenter + NDCSize * 0.5,
+		ndcCenter - TextBoxSizePx * 0.5 / ViewportSize,
+		ndcCenter + TextBoxSizePx * 0.5 / ViewportSize,
 		coord
 	);
 
@@ -60,13 +66,14 @@ void VS(
 	oCoord = coord + ViewportOffset;
 }
 
+float Rand1D(float x)  { return frac(sin(x) * 43758.5453123); }
+
 float4 PS(float2 coord : TEXCOORD0) : COLOR {
-	float2 pixelPos = coord * PxSize;
-	float digitWidth = PxSize.y * 0.5;
+	float2 pixelPos = coord * TextBoxSizePx;
 	// 左から数えて何桁目か (コンマ含む)
-	int il = int(pixelPos.x / digitWidth);
+	int il = int(pixelPos.x / CharWidthPx);
 	if (il >= KetaWithComma) {
-		return BackgroundColor;
+		clip(-1);
 	}
 	// 右から数えて何桁目か (コンマ含む)
 	int ir = KetaWithComma - il - 1;
@@ -77,13 +84,21 @@ float4 PS(float2 coord : TEXCOORD0) : COLOR {
 	} else {
 		int numCommaRight = (ir + 1) / 4; // 右にあるコンマの数
 		int kr = ir - numCommaRight; // 右から数えて何桁目か (コンマ含まず)
-		d = floor(fmod(Value, pow(10.0, kr+1)) / pow(10.0, kr));
+		int kl = Keta - kr - 1;      // 左から数えて何桁目か (コンマ含まず)
+		if (kl < 6) {
+			// Value の kr 桁目を取り出す
+			d = int(clamp(fmod(Value, pow(10.0, kr+1)) / pow(10.0, kr), 0, 9.99));
+		} else {
+			// 左から数えて7桁目以降は精度が足りないので乱数で埋める
+			float e;
+			d = int(clamp(Rand1D(frexp(Value, e) + kr) * 10, 0, 9.99));
+		}
 	}
 
 	float texLeft = OneDigitSize.x * d;
 	float texRight = OneDigitSize.x * (d + 1);
 	float2 uv = float2(
-		lerp(texLeft, texRight, frac(pixelPos.x / digitWidth)),
+		lerp(texLeft, texRight, frac(pixelPos.x / CharWidthPx)),
 		1.0 - coord.y);
 
 	float4 colorFG = tex2D(DigitsSamp, uv);
