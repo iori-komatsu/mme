@@ -13,20 +13,11 @@ float3 mCenter : CONTROLOBJECT<string name = "Counter.pmx"; string item = "Cente
 float3 mSize   : CONTROLOBJECT<string name = "Counter.pmx"; string item = "Size";>;
 float3 mCount  : CONTROLOBJECT<string name = "Counter.pmx"; string item = "Count";>;
 
-static const float FontSizePx = abs(mSize.y);
-static const float CharWidthPx = FontSizePx * 0.5;
-static const float CharHeightPx = FontSizePx;
-
-static const float  Value = mCount.x;
-
+static float Value = mCount.x;
 static int Keta = int(log10(max(1.0, Value + 0.5))) + 1;
 static int NumComma = (Keta - 1) / 3;
-static int KetaWithComma = Keta + NumComma;
-static float TextBoxWidthPx = CharWidthPx * KetaWithComma;
-static float TextBoxHeightPx = CharHeightPx;
-static float2 TextBoxSizePx = float2(TextBoxWidthPx, TextBoxHeightPx);
 
-static const float4 BackgroundColor = float4(0.9, 0.9, 0.9, 1.0);
+static float4 BackgroundColor = float4(0.9, 0.9, 0.9, 1.0);
 
 //-----------------------------------------------------------------------------
 
@@ -43,8 +34,20 @@ sampler2D DigitsSamp = sampler_state {
     AddressV = CLAMP;
 };
 
-static const float2 DigitsTextureSize = float2(1100, 200);
-static float2 OneDigitSize = float2(100, 200) / DigitsTextureSize;
+static float2 DigitsTextureSizePx = float2(1100, 200);
+static float2 DigitTexSizePx = float2(100, 200);
+static float2 CommaTexSizePx = float2(67, 200);
+
+static float FontSizePx = abs(mSize.y);
+static float DigitWidthPx = FontSizePx * 0.5;
+static float CommaWidthPx = DigitWidthPx * (CommaTexSizePx.x / DigitTexSizePx.x);
+static float CharHeightPx = FontSizePx;
+
+static float TextBoxWidthPx = DigitWidthPx * Keta + CommaWidthPx * NumComma;
+static float TextBoxHeightPx = CharHeightPx;
+static float2 TextBoxSizePx = float2(TextBoxWidthPx, TextBoxHeightPx);
+
+static float PartWidthPx = DigitWidthPx * 3 + CommaWidthPx;
 
 //-----------------------------------------------------------------------------
 
@@ -70,21 +73,24 @@ float Rand1D(float x)  { return frac(sin(x) * 43758.5453123); }
 
 float4 PS(float2 coord : TEXCOORD0) : COLOR {
 	float2 pixelPos = coord * TextBoxSizePx;
-	// 左から数えて何桁目か (コンマ含む)
-	int il = int(pixelPos.x / CharWidthPx);
-	if (il >= KetaWithComma) {
-		clip(-1);
-	}
-	// 右から数えて何桁目か (コンマ含む)
-	int ir = KetaWithComma - il - 1;
-	// 表示すべき数字
-	int d;
-	if (ir % 4 == 3) {
-		d = 10; // コンマを表示する
+	float xr = TextBoxWidthPx - pixelPos.x;
+
+	// コンマで区切られた区間をパートと呼ぶことにする。
+	// pixelPos が右から数えて何番目のパートにあるか調べる。
+	float partIndex = floor(xr / PartWidthPx);
+	float xpr = xr - partIndex * PartWidthPx; // 右から数えたパート相対座標
+
+	float d; // 表示すべき数字またはコンマ
+	float cw; // 表示すべき文字の幅
+	float cx; // 表示すべき文字内の相対座標
+	if (xpr >= 3 * DigitWidthPx) {
+		// コンマを表示する
+		d = 10;
+		cw = CommaTexSizePx.x;
+		cx = 1.0 - (xpr - 3 * DigitWidthPx) / CommaWidthPx;
 	} else {
-		int numCommaRight = (ir + 1) / 4; // 右にあるコンマの数
-		int kr = ir - numCommaRight; // 右から数えて何桁目か (コンマ含まず)
-		int kl = Keta - kr - 1;      // 左から数えて何桁目か (コンマ含まず)
+		int kr = partIndex * 3 + int(xpr / DigitWidthPx); // 右から数えて何桁目か
+		int kl = Keta - kr - 1; // 左から数えて何桁目か
 		if (kl < 6) {
 			// Value の kr 桁目を取り出す
 			d = int(clamp(fmod(Value, pow(10.0, kr+1)) / pow(10.0, kr), 0, 9.99));
@@ -93,12 +99,15 @@ float4 PS(float2 coord : TEXCOORD0) : COLOR {
 			float e;
 			d = int(clamp(Rand1D(frexp(Value, e) + kr) * 10, 0, 9.99));
 		}
+		cw = DigitTexSizePx.x;
+		cx = 1.0 - fmod(xpr, DigitWidthPx) / DigitWidthPx;
 	}
 
-	float texLeft = OneDigitSize.x * d;
-	float texRight = OneDigitSize.x * (d + 1);
+	// テクスチャ上の位置を計算する
+	float texLeft = DigitTexSizePx.x * d;
+	float texRight = texLeft + cw;
 	float2 uv = float2(
-		lerp(texLeft, texRight, frac(pixelPos.x / CharWidthPx)),
+		lerp(texLeft, texRight, cx) / DigitsTextureSizePx.x,
 		1.0 - coord.y);
 
 	float4 colorFG = tex2D(DigitsSamp, uv);
