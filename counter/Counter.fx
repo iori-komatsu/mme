@@ -16,7 +16,7 @@ float3 mCount  : CONTROLOBJECT<string name = "Counter.pmx"; string item = "Count
 static const float2 NDCSize = abs(mSize.xy / ViewportSize);
 static const float2 PxSize = abs(mSize.xy);
 static const float  Value = mCount.x;
-static int Keta = int(log10(max(1.0, Value))) + 1;
+static int Keta = int(log10(max(1.0, Value + 0.5))) + 1;
 static int NumComma = (Keta - 1) / 3;
 static int KetaWithComma = Keta + NumComma;
 
@@ -30,9 +30,9 @@ texture2D DigitsTexture <
 >;
 sampler2D DigitsSamp = sampler_state {
     Texture = <DigitsTexture>;
-    MinFilter = ANISOTROPIC;
-    MagFilter = ANISOTROPIC;
-    MipFilter = NONE;
+    MinFilter = LINEAR;
+    MagFilter = LINEAR;
+    MipFilter = LINEAR;
     AddressU = CLAMP;
     AddressV = CLAMP;
 };
@@ -77,7 +77,7 @@ float4 PS(float2 coord : TEXCOORD0) : COLOR {
 	} else {
 		int numCommaRight = (ir + 1) / 4; // 右にあるコンマの数
 		int kr = ir - numCommaRight; // 右から数えて何桁目か (コンマ含まず)
-		d = fmod(floor(Value / pow(10.0, kr)), 10);
+		d = floor(fmod(Value, pow(10.0, kr+1)) / pow(10.0, kr));
 	}
 
 	float texLeft = OneDigitSize.x * d;
