@@ -7,6 +7,9 @@ float4x4 LightWorldViewProjMatrix : WORLDVIEWPROJECTION < string Object = "Light
 float2 ViewportSize : VIEWPORTPIXELSIZE;
 static const float2 ViewportOffset = float2(0.5, 0.5) / ViewportSize;
 
+// 画像出力時に ViewportSize が変化するので、縦の幅を 1080 に固定した仮想的な ViewportSize を用いる
+static float2 VirtualViewportSize = float2(1080.0 * ViewportSize.x / ViewportSize.y, 1080);
+
 //-----------------------------------------------------------------------------
 
 float3 mCenter : CONTROLOBJECT<string name = "Counter.pmx"; string item = "Center";>;
@@ -60,8 +63,8 @@ void VS(
 	float4 clipCenter = mul(float4(mCenter, 1.0), ViewProjMatrix);
 	float2 ndcCenter = clipCenter.xy / clipCenter.w;
 	float2 ndcPos = lerp(
-		ndcCenter - TextBoxSizePx * 0.5 / ViewportSize,
-		ndcCenter + TextBoxSizePx * 0.5 / ViewportSize,
+		ndcCenter - TextBoxSizePx * 0.5 / VirtualViewportSize,
+		ndcCenter + TextBoxSizePx * 0.5 / VirtualViewportSize,
 		coord
 	);
 
@@ -69,7 +72,9 @@ void VS(
 	oCoord = coord + ViewportOffset;
 }
 
-float Rand1D(float x)  { return frac(sin(x) * 43758.5453123); }
+float Rand1D(float x)  {
+	return frac(sin(x) * 43758.5453123);
+}
 
 float4 PS(float2 coord : TEXCOORD0) : COLOR {
 	float2 pixelPos = coord * TextBoxSizePx;
