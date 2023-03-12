@@ -37,6 +37,19 @@ sampler2D DigitsSamp = sampler_state {
     AddressV = CLAMP;
 };
 
+texture2D IconTexture <
+	string ResourceName = "icon.png";
+	string Format = "D3DFMT_A16B16G16R16F";
+>;
+sampler2D IconSamp = sampler_state {
+    Texture = <IconTexture>;
+    MinFilter = LINEAR;
+    MagFilter = LINEAR;
+    MipFilter = LINEAR;
+    AddressU = CLAMP;
+    AddressV = CLAMP;
+};
+
 static float2 DigitsTextureSizePx = float2(1100, 200);
 static float2 DigitTexSizePx = float2(100, 200);
 static float2 CommaTexSizePx = float2(67, 200);
@@ -53,7 +66,10 @@ static float2 TextBoxSizePx = float2(TextBoxWidthPx, TextBoxHeightPx);
 static float PaddingLeftPx = 10;
 static float PaddingRightPx = 10;
 
-static float ContainerBoxWidthPx = TextBoxWidthPx + PaddingLeftPx + PaddingRightPx;
+static float IconWidthPx = FontSizePx;
+static float IconHeightPx = FontSizePx;
+
+static float ContainerBoxWidthPx = PaddingLeftPx + IconWidthPx + TextBoxWidthPx + PaddingRightPx;
 static float ContainerBoxHeightPx = TextBoxHeightPx;
 static float2 ContainerBoxSizePx = float2(ContainerBoxWidthPx, ContainerBoxHeightPx);
 
@@ -81,6 +97,12 @@ void VS(
 
 float Rand1D(float x)  {
 	return frac(sin(x) * 43758.5453123);
+}
+
+float4 Icon(float2 pixelPos) {
+	float2 uv = pixelPos / float2(IconWidthPx, IconHeightPx);
+	uv.y = 1.0 - uv.y;
+	return tex2D(IconSamp, uv);
 }
 
 float4 TextBox(float2 pixelPos) {
@@ -129,8 +151,10 @@ float4 PS(float2 coord : TEXCOORD0) : COLOR {
 	float4 colorFG;
 	if (pixelPos.x < PaddingLeftPx) {
 		colorFG = BackgroundColor;
-	} else if (pixelPos.x < PaddingLeftPx + TextBoxWidthPx) {
-		colorFG = TextBox(pixelPos - float2(PaddingLeftPx, 0.0));
+	} else if (pixelPos.x < PaddingLeftPx + IconWidthPx) {
+		colorFG = Icon(pixelPos - float2(PaddingLeftPx, 0.0));
+	} else if (pixelPos.x < PaddingLeftPx + IconWidthPx + TextBoxWidthPx) {
+		colorFG = TextBox(pixelPos - float2(PaddingLeftPx + IconWidthPx, 0.0));
 	} else {
 		colorFG = BackgroundColor;
 	}
