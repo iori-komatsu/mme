@@ -50,6 +50,13 @@ static float TextBoxWidthPx = DigitWidthPx * Keta + CommaWidthPx * NumComma;
 static float TextBoxHeightPx = CharHeightPx;
 static float2 TextBoxSizePx = float2(TextBoxWidthPx, TextBoxHeightPx);
 
+static float PaddingLeftPx = 10;
+static float PaddingRightPx = 10;
+
+static float ContainerBoxWidthPx = TextBoxWidthPx + PaddingLeftPx + PaddingRightPx;
+static float ContainerBoxHeightPx = TextBoxHeightPx;
+static float2 ContainerBoxSizePx = float2(ContainerBoxWidthPx, ContainerBoxHeightPx);
+
 static float PartWidthPx = DigitWidthPx * 3 + CommaWidthPx;
 
 //-----------------------------------------------------------------------------
@@ -63,8 +70,8 @@ void VS(
 	float4 clipCenter = mul(float4(mCenter, 1.0), ViewProjMatrix);
 	float2 ndcCenter = clipCenter.xy / clipCenter.w;
 	float2 ndcPos = lerp(
-		ndcCenter - TextBoxSizePx * 0.5 / VirtualViewportSize,
-		ndcCenter + TextBoxSizePx * 0.5 / VirtualViewportSize,
+		ndcCenter - ContainerBoxSizePx * 0.5 / VirtualViewportSize,
+		ndcCenter + ContainerBoxSizePx * 0.5 / VirtualViewportSize,
 		coord
 	);
 
@@ -76,8 +83,7 @@ float Rand1D(float x)  {
 	return frac(sin(x) * 43758.5453123);
 }
 
-float4 PS(float2 coord : TEXCOORD0) : COLOR {
-	float2 pixelPos = coord * TextBoxSizePx;
+float4 TextBox(float2 pixelPos) {
 	float xr = TextBoxWidthPx - pixelPos.x;
 
 	// コンマで区切られた区間をパートと呼ぶことにする。
@@ -113,9 +119,21 @@ float4 PS(float2 coord : TEXCOORD0) : COLOR {
 	float texRight = texLeft + cw;
 	float2 uv = float2(
 		lerp(texLeft, texRight, cx) / DigitsTextureSizePx.x,
-		1.0 - coord.y);
+		1.0 - pixelPos.y / TextBoxHeightPx);
 
-	float4 colorFG = tex2D(DigitsSamp, uv);
+	return tex2D(DigitsSamp, uv);
+}
+
+float4 PS(float2 coord : TEXCOORD0) : COLOR {
+	float2 pixelPos = coord * ContainerBoxSizePx;
+	float4 colorFG;
+	if (pixelPos.x < PaddingLeftPx) {
+		colorFG = BackgroundColor;
+	} else if (pixelPos.x < PaddingLeftPx + TextBoxWidthPx) {
+		colorFG = TextBox(pixelPos - float2(PaddingLeftPx, 0.0));
+	} else {
+		colorFG = BackgroundColor;
+	}
     return float4(lerp(BackgroundColor.rgb, colorFG.rgb, colorFG.a), 1.0);
 }
 
