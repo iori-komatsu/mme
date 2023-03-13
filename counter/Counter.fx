@@ -12,15 +12,30 @@ static float2 VirtualViewportSize = float2(1080.0 * ViewportSize.x / ViewportSiz
 
 //-----------------------------------------------------------------------------
 
-float3 mCenter : CONTROLOBJECT<string name = "Counter.pmx"; string item = "Center";>;
-float3 mSize   : CONTROLOBJECT<string name = "Counter.pmx"; string item = "Size";>;
-float3 mCount  : CONTROLOBJECT<string name = "Counter.pmx"; string item = "Count";>;
+float3 mCenter : CONTROLOBJECT<string name = "(self)"; string item = "Center";>;
+float3 mSize   : CONTROLOBJECT<string name = "(self)"; string item = "Size";>;
+float3 mCount  : CONTROLOBJECT<string name = "(self)"; string item = "Count";>;
+
+float  mFgH    : CONTROLOBJECT<string name = "(self)"; string item = "Fg H";>;
+float  mFgS    : CONTROLOBJECT<string name = "(self)"; string item = "Fg S";>;
+float  mFgV    : CONTROLOBJECT<string name = "(self)"; string item = "Fg V";>;
+float  mFgTr   : CONTROLOBJECT<string name = "(self)"; string item = "Fg Tr";>;
+float  mBgH    : CONTROLOBJECT<string name = "(self)"; string item = "Bg H";>;
+float  mBgS    : CONTROLOBJECT<string name = "(self)"; string item = "Bg S";>;
+float  mBgV    : CONTROLOBJECT<string name = "(self)"; string item = "Bg V";>;
+float  mBgTr   : CONTROLOBJECT<string name = "(self)"; string item = "Bg Tr";>;
 
 static float Value = mCount.x;
 static int Keta = int(log10(max(1.0, Value + 0.5))) + 1;
 static int NumComma = (Keta - 1) / 3;
 
-static float4 BackgroundColor = float4(0.9, 0.9, 0.9, 1.0);
+float3 HSV2RGB(float3 hsv) {
+	float3 rgb = smoothstep(2.0, 1.0, abs(fmod(hsv.x*6.0 + float3(0, 4, 2), 6.0) - 3.0));
+	return hsv.z * (1.0 - hsv.y * rgb);
+}
+
+static float4 ForegroundColor = float4(HSV2RGB(float3(mFgH, mFgS, mFgV)), 1.0-mFgTr);
+static float4 BackgroundColor = float4(HSV2RGB(float3(mBgH, mBgS, 1.0-mBgV)), 1.0-mBgTr);
 
 //-----------------------------------------------------------------------------
 
@@ -136,6 +151,11 @@ float4 TextBox(float2 pixelPos) {
 		cx = 1.0 - fmod(xpr, DigitWidthPx) / DigitWidthPx;
 	}
 
+	// スプライトの端っこは非連続性の都合で描画がおかしくなるので強制的に透明にする
+	if (min(cx, 1.0-cx) < 0.07) {
+		return float4(0, 0, 0, 0);
+	}
+
 	// テクスチャ上の位置を計算する
 	float texLeft = DigitTexSizePx.x * d;
 	float texRight = texLeft + cw;
@@ -146,19 +166,26 @@ float4 TextBox(float2 pixelPos) {
 	return tex2D(DigitsSamp, uv);
 }
 
+float4 InvertColor(float4 color) {
+	return float4(1.0 - color.rgb, color.a);
+}
+
 float4 PS(float2 coord : TEXCOORD0) : COLOR {
 	float2 pixelPos = coord * ContainerBoxSizePx;
 	float4 colorFG;
 	if (pixelPos.x < PaddingLeftPx) {
-		colorFG = BackgroundColor;
+		colorFG = float4(0, 0, 0, 0);
 	} else if (pixelPos.x < PaddingLeftPx + IconWidthPx) {
 		colorFG = Icon(pixelPos - float2(PaddingLeftPx, 0.0));
+		colorFG = InvertColor(colorFG) * ForegroundColor;
 	} else if (pixelPos.x < PaddingLeftPx + IconWidthPx + TextBoxWidthPx) {
 		colorFG = TextBox(pixelPos - float2(PaddingLeftPx + IconWidthPx, 0.0));
+		colorFG = InvertColor(colorFG) * ForegroundColor;
 	} else {
-		colorFG = BackgroundColor;
+		colorFG = float4(0, 0, 0, 0);
 	}
-    return float4(lerp(BackgroundColor.rgb, colorFG.rgb, colorFG.a), 1.0);
+	return float4(lerp(BackgroundColor.rgb, colorFG.rgb, colorFG.a),
+	saturate(colorFG.a + BackgroundColor.a));
 }
 
 //-----------------------------------------------------------------------------
