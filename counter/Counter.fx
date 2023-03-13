@@ -79,7 +79,7 @@ static float TextBoxHeightPx = CharHeightPx;
 static float2 TextBoxSizePx = float2(TextBoxWidthPx, TextBoxHeightPx);
 
 static float PaddingLeftPx = 10;
-static float PaddingRightPx = 10;
+static float PaddingRightPx = 15;
 
 static float IconWidthPx = FontSizePx;
 static float IconHeightPx = FontSizePx;
