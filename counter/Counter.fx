@@ -69,7 +69,7 @@ static float2 DigitsTextureSizePx = float2(1100, 200);
 static float2 DigitTexSizePx = float2(100, 200);
 static float2 CommaTexSizePx = float2(67, 200);
 
-static float FontSizePx = abs(mSize.y);
+static float FontSizePx = abs(mSize.x);
 static float DigitWidthPx = FontSizePx * 0.5;
 static float CommaWidthPx = DigitWidthPx * (CommaTexSizePx.x / DigitTexSizePx.x);
 static float CharHeightPx = FontSizePx;
