@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>犠牲者カウンター</title>
+    <style>
+body {
+    color: #303030;
+    background-color: #E0E0E0;
+    line-height: 180%;
+    max-width: 40em;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 3em;
+}
+
+dt {
+    font-weight: bold;
+}
+
+dd {
+    margin-bottom: 1em;
+}
+
+h2 {
+    margin-top: 2em;
+}
+
+nav {
+    margin-bottom: 2em;
+}
+
+.placeholder {
+    color: maroon;
+}
+
+.heading {
+    margin-top: 3em;
+    margin-bottom: 3em;
+}
+
+.breaking-change {
+    color: #C01010;
+}
+
+.notice {
+    background-color: #E0E070;
+    padding: 1em;
+}
+
+.memo {
+    background-color: rgb(214, 222, 239);
+    border-style: solid;
+    border-color: gray;
+    border-width: 1px;
+    padding: 1em;
+}
+    </style>
+  </head>
+  <body>
+
+<div class="heading">
+  <h1>犠牲者カウンターエフェクト</h1>
+  <p><em>by Iori Komatsu (<a href="https://twitter.com/iori_komatsu" target="_blank">@iori_komatsu</a>)</em></p>
+</div>
+
+<p><img src="screenshot.jpg" style="max-width: 40em;"></p>
+
+<p>犠牲者カウンターを表示するエフェクトです。色や透明度を変更したりもできます。</p>
+
+<h2 id="how_to_use">使い方</h2>
+
+<ol>
+  <li>Counter.pmx を MMD に読み込んでください。</li>
+  <li>最初はサイズが 0 になっているので、Size ボーンの x 座標を動かしてサイズを設定してください。</li>
+  <li>(ray-mmd を使っている場合のみ) エフェクト割当の MaterialMap タブで Material_Counter.fx を割り当ててください。</li>
+</ol>
+
+<p>あとは Count ボーンの x 座標を動かすことでカウント値を変更できます。</p>
+
+<p>このカウンターは内部の精度の都合上、上位6桁ぐらいしか正確に表示できません。残りの桁はランダムになります。ご了承ください。</p>
+
+<h2 id="parameters">パラメータ</h2>
+
+ボーンと表情操作を使って調整することができます。
+
+<dl>
+  <dt>Center</dt>
+  <dd>カウンターを表示する場所を三次元の座標で指定します。</dd>
+
+  <dt>Size (x座標)</dt>
+  <dd>カウンターの大きさを指定します。</dd>
+
+  <dt>Count (x座標)</dt>
+  <dd>カウンターに表示する値を指定します。</dd>
+
+  <dt>Fg H, Fg S, Fg V</dt>
+  <dd>文字の色を指定します。H, S, V はそれぞれ色相、彩度、明度を表しています。</dd>
+
+  <dt>Bg H, Bg S, Bg V</dt>
+  <dd>背景の色を指定します。H, S, V はそれぞれ色相、彩度、明度を表しています。</dd>
+
+  <dt>Fg Tr, Bg Tr</dt>
+  <dd>それぞれ文字と背景の透明度を指定します。</dd>
+</dl>
+
+<p class="memo">ray-mmd や sdPBR のようなエフェクトを利用している場合、エフェクトの効果がカウンターにも乗ってしまいます。
+それによってカウンターの値が読みづらくなってしまう場合は、文字色や背景色を変更するなどして各自何とかしてください。</p>
+
+<h2 id="customize">カスタマイズ</h2>
+
+<p>
+icon.png と digits.png を差し替えることでアイコンや文字を変更できます。
+差し替える際は画像のサイズが変わらないように注意してください。
+また、画像のフォーマットは透過PNGにし、背景は透過させてください。
+</p>
+
+<h2 id="history">更新履歴</h2>
+
+<dl>
+  <dt>2023-03-15 rev.1</dt>
+  <dd>公開</dd>
+</dl>
+
+<h2 id="license">利用条件</h2>
+
+<p>このエフェクトは MIT License の下に配布されています。</p>
+
+  </body>
+</html>
